@@ -1,0 +1,186 @@
+/* =========================
+   FORM CONTAINER (GLASS)
+   ========================= */
+.form-container {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-top-left-radius: 1.5rem;
+    border-bottom-left-radius: 1.5rem;
+}
+
+/* =========================
+   BUTTON GRADIENTS
+   ========================= */
+.login-btn-bg {
+    background-image: linear-gradient(to right, #4a74a5, #3a5c8c);
+    transition: all 0.3s ease;
+}
+
+.login-btn-bg:hover,
+.register-btn-bg:hover {
+    background-image: linear-gradient(to right, #3a5c8c, #2d4a73);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* =========================
+   INPUT FOCUS EFFECT
+   ========================= */
+.input-focus:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    outline: none;
+}
+
+/* =========================
+   TYPING ANIMATION
+   ========================= */
+.typing-container {
+    height: 1.5em;
+    margin-bottom: 2rem;
+}
+
+.typing-animation {
+    overflow: hidden;
+    border-right: .15em solid #4a74a5;
+    white-space: nowrap;
+    letter-spacing: .05em;
+    animation:
+        typing 3.5s steps(40, end) infinite,
+        blink-caret .75s step-end infinite;
+}
+
+/* Keyframes */
+@keyframes typing {
+    0% {
+        width: 0
+    }
+
+    50% {
+        width: 100%
+    }
+
+    80%,
+    100% {
+        width: 100%
+    }
+}
+
+@keyframes blink-caret {
+
+    from,
+    to {
+        border-color: transparent
+    }
+
+    50% {
+        border-color: #4a74a5;
+    }
+}
+
+/* =========================
+   VIDEO BACKGROUND
+   ========================= */
+.video-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    border-top-right-radius: 1.5rem;
+    border-bottom-right-radius: 1.5rem;
+}
+
+.video-background {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.video-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(59, 92, 140, 0.4);
+}
+
+/* =========================
+   SOCIAL ICONS
+   ========================= */
+.wrapper {
+    display: flex;
+    list-style: none;
+    justify-content: center;
+    margin-top: 20px;
+    padding: 0;
+}
+
+.wrapper .icon {
+    position: relative;
+    background: #fff;
+    border-radius: 50%;
+    margin: 10px;
+    width: 50px;
+    height: 50px;
+    font-size: 18px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 10px 10px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+/* Tooltip */
+.wrapper .tooltip {
+    position: absolute;
+    top: 0;
+    font-size: 14px;
+    background: #fff;
+    color: #fff;
+    padding: 5px 8px;
+    border-radius: 5px;
+    box-shadow: 0 10px 10px rgba(0, 0, 0, 0.1);
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.3s ease;
+}
+
+.wrapper .tooltip::before {
+    content: "";
+    position: absolute;
+    height: 8px;
+    width: 8px;
+    background: #fff;
+    bottom: -3px;
+    left: 50%;
+    transform: translateX(-50%) rotate(45deg);
+}
+
+/* Hover effects */
+.wrapper .icon:hover .tooltip {
+    top: -45px;
+    opacity: 1;
+}
+
+.wrapper .facebook:hover,
+.wrapper .facebook:hover .tooltip,
+.wrapper .facebook:hover .tooltip::before {
+    background: #1877f2;
+    color: #fff;
+}
+
+.wrapper .linkedin:hover,
+.wrapper .linkedin:hover .tooltip,
+.wrapper .linkedin:hover .tooltip::before {
+    background: #0A66C2;
+    color: #fff;
+}
+
+.wrapper .google:hover,
+.wrapper .google:hover .tooltip,
+.wrapper .google:hover .tooltip::before {
+    background: #db4437;
+    color: #fff;
+}
