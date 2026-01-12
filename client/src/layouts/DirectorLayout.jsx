@@ -1,9 +1,19 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { useState } from "react";
-import { Menu, X, LayoutDashboard, Building2, LogOut, ChevronRight, Sparkles } from "lucide-react";
+import {
+    Menu,
+    X,
+    LayoutDashboard,
+    Car,
+    Users,
+    CalendarRange,
+    LogOut,
+    ChevronRight,
+    Briefcase
+} from "lucide-react";
 
-export default function SuperAdminLayout() {
+export default function DirectorLayout() {
     const { logout } = useAuth();
     const navigate = useNavigate();
     const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -32,11 +42,11 @@ export default function SuperAdminLayout() {
                 <div className="flex items-center justify-between mb-12">
                     <div className="flex items-center gap-3">
                         <div className="w-12 h-12 bg-secondary rounded-2xl flex items-center justify-center text-white shadow-lg shadow-secondary/30">
-                            <Sparkles size={24} strokeWidth={2.5} />
+                            <Briefcase size={24} strokeWidth={2.5} />
                         </div>
                         <div className="flex flex-col">
-                            <span className="text-xl font-bold text-white tracking-tight">SuperAdmin</span>
-                            <span className="text-xs text-text-muted font-medium">Admin Platform</span>
+                            <span className="text-xl font-bold text-white tracking-tight">Directeur</span>
+                            <span className="text-xs text-text-muted font-medium">Console de gestion</span>
                         </div>
                     </div>
                     <button
@@ -50,7 +60,7 @@ export default function SuperAdminLayout() {
                 {/* Navigation */}
                 <nav className="space-y-2 flex-1">
                     <NavLink
-                        to="/superadmin"
+                        to="/director"
                         end
                         onClick={() => setSidebarOpen(false)}
                         className={({ isActive }) =>
@@ -71,7 +81,7 @@ export default function SuperAdminLayout() {
                     </NavLink>
 
                     <NavLink
-                        to="/superadmin/enterprises"
+                        to="/director/fleet"
                         onClick={() => setSidebarOpen(false)}
                         className={({ isActive }) =>
                             `group flex items-center justify-between rounded-xl px-4 py-3.5 font-medium transition-all duration-200 ${isActive
@@ -81,8 +91,48 @@ export default function SuperAdminLayout() {
                         }
                     >
                         <div className="flex items-center gap-3">
-                            <Building2 size={20} strokeWidth={2} />
-                            <span>Entreprises</span>
+                            <Car size={20} strokeWidth={2} />
+                            <span>Gestion de la flotte</span>
+                        </div>
+                        <ChevronRight
+                            size={16}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity"
+                        />
+                    </NavLink>
+
+                    <NavLink
+                        to="/director/customers"
+                        onClick={() => setSidebarOpen(false)}
+                        className={({ isActive }) =>
+                            `group flex items-center justify-between rounded-xl px-4 py-3.5 font-medium transition-all duration-200 ${isActive
+                                ? "bg-secondary text-white shadow-lg shadow-secondary/30"
+                                : "text-text-muted hover:bg-white/5 hover:text-white"
+                            }`
+                        }
+                    >
+                        <div className="flex items-center gap-3">
+                            <Users size={20} strokeWidth={2} />
+                            <span>Clients</span>
+                        </div>
+                        <ChevronRight
+                            size={16}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity"
+                        />
+                    </NavLink>
+
+                    <NavLink
+                        to="/director/rentals"
+                        onClick={() => setSidebarOpen(false)}
+                        className={({ isActive }) =>
+                            `group flex items-center justify-between rounded-xl px-4 py-3.5 font-medium transition-all duration-200 ${isActive
+                                ? "bg-secondary text-white shadow-lg shadow-secondary/30"
+                                : "text-text-muted hover:bg-white/5 hover:text-white"
+                            }`
+                        }
+                    >
+                        <div className="flex items-center gap-3">
+                            <CalendarRange size={20} strokeWidth={2} />
+                            <span>Locations</span>
                         </div>
                         <ChevronRight
                             size={16}
@@ -115,14 +165,14 @@ export default function SuperAdminLayout() {
                 <header className="bg-surface border-b border-border px-6 py-4 flex items-center justify-between z-30 shadow-sm">
                     <div className="lg:hidden flex items-center gap-3">
                         <div className="w-9 h-9 bg-secondary rounded-xl flex items-center justify-center text-white shadow-md">
-                            <Sparkles size={18} />
+                            <Briefcase size={18} />
                         </div>
-                        <span className="font-bold text-text-primary tracking-tight">SuperAdmin</span>
+                        <span className="font-bold text-text-primary tracking-tight">Directeur</span>
                     </div>
 
                     <div className="hidden lg:block">
-                        <h1 className="text-2xl font-bold text-text-primary">Bon retour</h1>
-                        <p className="text-sm text-text-secondary mt-0.5">Gérez vos entreprises et votre tableau de bord</p>
+                        <h1 className="text-2xl font-bold text-text-primary">Vue d'ensemble</h1>
+                        <p className="text-sm text-text-secondary mt-0.5">Gérez vos opérations quotidiennes</p>
                     </div>
 
                     <div className="flex items-center gap-3">
@@ -135,15 +185,15 @@ export default function SuperAdminLayout() {
 
                         <div className="hidden lg:flex items-center gap-2 bg-background rounded-lg px-3 py-2">
                             <div className="w-8 h-8 bg-secondary rounded-lg flex items-center justify-center text-white text-sm font-semibold">
-                                SA
+                                D
                             </div>
-                            <span className="text-sm font-medium text-text-primary">Super Admin</span>
+                            <span className="text-sm font-medium text-text-primary">Directeur</span>
                         </div>
                     </div>
                 </header>
 
                 {/* Main Content */}
-                <main className="flex-1 p-4 lg:p-8 overflow-y-auto bg-background">
+                <main className="flex-1 overflow-y-auto bg-background">
                     <Outlet />
                 </main>
             </div>

@@ -1,0 +1,58 @@
+🗄️ Database Structure (PostgreSQL)
+Defined in 
+server/src/schema.sql
+, the database uses uuid for IDs and btree_gist for overlap constraints.
+
+enterprises (Tenants)
+id (uuid, PK)
+name (text)
+address (text)
+status (text: 'active', 'suspended')
+plan (text: 'Free', 'Pro', 'Enterprise')
+created_at
+users (Auth)
+id (uuid, PK)
+enterprise_id (FK -> enterprises.id, NULL for superadmin)
+email (unique)
+password_hash
+role (text: 'superadmin', 'director', 'agent')
+reset_token, reset_token_expires
+created_at
+Business Logic Tables (Scoped by enterprise_id)
+customers: id, full_name, phone, email
+vehicles: id, name, plate, daily_price_cents, status ('available', 'maintenance')
+rentals: id, customer_id, vehicle_id, start_date, end_date, status ('reserved', 'active', 'completed', 'canceled'), total_cents
+Constraint: No overlapping rentals for the same vehicle/date range (except 'canceled').
+payments: id, rental_id, amount_cents, method ('cash', 'card', 'transfer'), paid_at
+💻 Frontend Structure (React + Vite)
+Root: client/src/
+
+text
+src/
+├── api/             # API configuration (axios/fetch wrappers)
+├── auth/            # Authentication logic
+│   └── AuthContext.jsx
+├── components/      # Reusable UI components
+│   ├── dashboard/   # Dashboard-specific components (e.g., PageHeader)
+│   ├── Button.jsx
+│   ├── Card.jsx
+│   ├── Input.jsx
+│   ├── Loader.jsx
+│   └── StatCard.jsx
+├── context/         # Global state contexts
+├── layouts/         # Page layouts
+│   └── SuperAdminLayout.jsx
+├── pages/           # Application views
+│   ├── auth/
+│   │   ├── Login.jsx
+│   │   ├── ResetPassword.jsx
+│   │   └── login.css
+│   └── superadmin/
+│       ├── Dashboard.jsx
+│       ├── Enterprises.jsx
+│       └── enterprise.css
+├── utils/           # Utility functions
+├── App.jsx          # Main App component
+├── main.jsx         # Entry point
+├── router.jsx       # Route definitions
+└── index.css        # Global styles & Tailwind configuration

@@ -1,12 +1,12 @@
 export default function Card({ title, children }) {
     return (
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
             {title && (
-                <div className="mb-4 text-lg font-semibold text-slate-800">
+                <div className="mb-4 text-lg font-semibold text-text-primary">
                     {title}
                 </div>
             )}
-            <div className="text-slate-600">
+            <div className="text-text-secondary">
                 {children}
             </div>
         </div>

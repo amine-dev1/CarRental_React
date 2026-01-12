@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "../../api/http";
 import "../../pages/auth/login.css";
 
@@ -8,9 +8,11 @@ import video from "../../assets/video.mp4";
 
 export default function ResetPassword() {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
 
     const [email, setEmail] = useState("");
     const [code, setCode] = useState("");
+    const [linkToken, setLinkToken] = useState(""); // Token du lien
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
 
@@ -18,6 +20,36 @@ export default function ResetPassword() {
     const [step, setStep] = useState(1); // 1: Email, 2: Code, 3: Password
     const [success, setSuccess] = useState(false);
     const [error, setError] = useState("");
+    const [tokenVerifying, setTokenVerifying] = useState(false);
+
+    // Vérifier si un token est présent dans l'URL
+    useEffect(() => {
+        const tokenFromUrl = searchParams.get("token");
+        const emailFromUrl = searchParams.get("email");
+
+        if (tokenFromUrl && emailFromUrl) {
+            setEmail(emailFromUrl);
+            setLinkToken(tokenFromUrl);
+            setTokenVerifying(true);
+
+            // Vérifier automatiquement le token
+            api("/api/auth/verify-code", {
+                method: "POST",
+                body: { email: emailFromUrl, token: tokenFromUrl },
+            })
+                .then((data) => {
+                    setCode(data.code); // Stocker le code retourné
+                    setStep(3); // Aller directement à l'étape de réinitialisation
+                })
+                .catch((err) => {
+                    setError(err.message || "Lien invalide ou expiré. Veuillez demander un nouveau code.");
+                    setStep(1);
+                })
+                .finally(() => {
+                    setTokenVerifying(false);
+                });
+        }
+    }, [searchParams]);
 
     // Step 1: Request Code
     async function handleRequestCode(e) {
@@ -72,7 +104,7 @@ export default function ResetPassword() {
         try {
             await api("/api/auth/reset-password", {
                 method: "POST",
-                body: { email, code, password },
+                body: { email, code, token: linkToken, password },
             });
             setSuccess(true);
             setTimeout(() => navigate("/login"), 3000);
@@ -97,7 +129,12 @@ export default function ResetPassword() {
                         </span>
                     </div>
 
-                    {!success ? (
+                    {tokenVerifying ? (
+                        <div className="text-center py-12">
+                            <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-blue-200 border-t-blue-600"></div>
+                            <p className="text-gray-600">Vérification du lien...</p>
+                        </div>
+                    ) : !success ? (
                         <>
                             {step === 1 && (
                                 <>

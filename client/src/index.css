@@ -11,6 +11,24 @@
   --color-deep-700: #1d4ed8;
   --color-deep-800: #1e40af;
   --color-deep-900: #0b1a3a;
+
+  /* Super Admin Palette */
+  --color-primary: #0F172A;
+  --color-secondary: #2563EB;
+  --color-accent: #10B981;
+  --color-warning: #F59E0B;
+  --color-error: #EF4444;
+
+  --color-background: #F8FAFC;
+  --color-background-sidebar: #020617;
+
+  --color-surface: #FFFFFF;
+  --color-border: #E5E7EB;
+
+  --color-text-primary: #111827;
+  --color-text-secondary: #6B7280;
+  --color-text-muted: #9CA3AF;
+  --color-text-ondark: #E5E7EB;
 }
 
 @layer base {
