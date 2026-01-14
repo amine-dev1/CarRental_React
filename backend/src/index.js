@@ -18,11 +18,12 @@ app.use(helmet());
 app.use(express.json());
 app.use(morgan("dev"));
 app.use(cors({
-    origin: process.env.CORS_ORIGIN || "http://localhost:5173",
-    credentials: true
+  origin: process.env.CORS_ORIGIN || "http://localhost:5173",
+  credentials: true
 }));
 
 app.get("/health", (_req, res) => res.json({ ok: true }));
+app.get("/", (_req, res) => res.send("Car Rental API is running"));
 
 app.use("/api/auth", authRoutes);
 app.use("/api/superadmin", superadminRoutes);
