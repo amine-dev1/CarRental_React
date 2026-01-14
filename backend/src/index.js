@@ -18,7 +18,10 @@ app.use(helmet());
 app.use(express.json());
 app.use(morgan("dev"));
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || "http://localhost:5173",
+  origin: [
+    "http://localhost:5173",
+    "https://car-rental-react-seven.vercel.app"
+  ],
   credentials: true
 }));
 
