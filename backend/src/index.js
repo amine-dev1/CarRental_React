@@ -17,11 +17,33 @@ const app = express();
 app.use(helmet());
 app.use(express.json());
 app.use(morgan("dev"));
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://car-rental-react-seven.vercel.app"
+];
+
 app.use(cors({
-  origin: [
-    "http://localhost:5173",
-    "https://car-rental-react-git-main-amine-dev1s-projects.vercel.app/"
-  ],
+  origin: function (origin, callback) {
+    // allow requests with no origin (Postman, mobile apps)
+    if (!origin) return callback(null, true);
+
+    // allow localhost
+    if (origin.startsWith("http://localhost")) {
+      return callback(null, true);
+    }
+
+    // allow ALL vercel preview domains
+    if (origin.endsWith(".vercel.app")) {
+      return callback(null, true);
+    }
+
+    // explicit allowlist
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error("CORS not allowed: " + origin));
+  },
   credentials: true
 }));
 
