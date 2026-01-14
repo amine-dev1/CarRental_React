@@ -12,20 +12,20 @@ A professional rental car management platform featuring a multi-tenant architect
 ### Installation
 
 1. **Clone the repository**
-2. **Install Client Dependencies**
+2. **Install Frontend Dependencies**
    ```bash
-   cd client
+   cd frontend
    npm install
    ```
-3. **Install Server Dependencies**
+3. **Install Backend Dependencies**
    ```bash
-   cd server
+   cd backend
    npm install
    ```
 
 ## 📦 Dependencies
 
-### Client-side (Frontend)
+### Frontend
 Built with **React 19**, **Vite**, and **Tailwind CSS**.
 
 | Package | Version | Description |
@@ -38,7 +38,7 @@ Built with **React 19**, **Vite**, and **Tailwind CSS**.
 | `date-fns` | ^4.1.0 | Date manipulation |
 | `clsx` & `tailwind-merge` | - | Utility for class management |
 
-### Server-side (Backend)
+### Backend
 Built with **Node.js**, **Express**, and **PostgreSQL**.
 
 | Package | Version | Description |
@@ -63,13 +63,13 @@ Built with **Node.js**, **Express**, and **PostgreSQL**.
 ## 🏗️ Project Structure
 
 ```text
-├── client/          # React frontend application
+├── frontend/          # React frontend application
 │   ├── src/
 │   │   ├── components/ # Reusable UI components
 │   │   ├── layouts/    # Layout wrappers
 │   │   ├── pages/      # Route pages
 │   │   └── api/        # API communication services
-└── server/          # Node.js backend application
+└── backend/          # Node.js backend application
     ├── src/
     │   ├── routes/     # API routes
     │   ├── controllers/# Business logic
@@ -78,10 +78,10 @@ Built with **Node.js**, **Express**, and **PostgreSQL**.
 
 ## 📝 Scripts
 
-### Client
+### Frontend
 - `npm run dev`: Starts Vite development server
 - `npm run build`: Builds the application for production
 
-### Server
+### Backend
 - `npm run dev`: Starts the server with Nodemon (auto-reload)
 - `npm run start`: Starts the server in production mode

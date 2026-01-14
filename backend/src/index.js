@@ -32,4 +32,7 @@ app.use("/api/vehicles", vehiclesRoutes);
 app.use("/api/rentals", rentalsRoutes);
 
 const port = process.env.PORT || 4000;
-app.listen(port, () => console.log(`✅ API running on :${port}`));
+
+app.listen(port, '0.0.0.0', () => {
+  console.log(`✅ API running on port ${port}`);
+});

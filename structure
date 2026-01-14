@@ -1,6 +1,6 @@
 🗄️ Database Structure (PostgreSQL)
 Defined in 
-server/src/schema.sql
+backend/src/schema.sql
 , the database uses uuid for IDs and btree_gist for overlap constraints.
 
 enterprises (Tenants)
@@ -25,7 +25,7 @@ rentals: id, customer_id, vehicle_id, start_date, end_date, status ('reserved', 
 Constraint: No overlapping rentals for the same vehicle/date range (except 'canceled').
 payments: id, rental_id, amount_cents, method ('cash', 'card', 'transfer'), paid_at
 💻 Frontend Structure (React + Vite)
-Root: client/src/
+Root: frontend/src/
 
 text
 src/

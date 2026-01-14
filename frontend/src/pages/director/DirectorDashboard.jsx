@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import api from '../../api/http';
+import { api } from '../../api/http';
 import {
     TrendingUp,
     TrendingDown,

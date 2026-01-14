@@ -1,5 +1,5 @@
 {
-  "name": "rental-server",
+  "name": "rental-backend",
   "version": "1.0.0",
   "type": "module",
   "main": "index.js",
