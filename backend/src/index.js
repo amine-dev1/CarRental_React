@@ -20,7 +20,7 @@ app.use(morgan("dev"));
 app.use(cors({
   origin: [
     "http://localhost:5173",
-    "https://car-rental-react-seven.vercel.app"
+    "https://car-rental-react-git-main-amine-dev1s-projects.vercel.app/"
   ],
   credentials: true
 }));
