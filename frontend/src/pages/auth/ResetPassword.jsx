@@ -25,6 +25,11 @@ export default function ResetPassword() {
     const [error, setError] = useState("");
     const [tokenVerifying, setTokenVerifying] = useState(false);
 
+    // Country Code state
+    const [countries, setCountries] = useState([]);
+    const [selectedCountry, setSelectedCountry] = useState({ code: "+212", cca2: "MA", flag: "🇲🇦" });
+    const [loadingCountries, setLoadingCountries] = useState(false);
+
     // Resend Code Logic
     const [canResend, setCanResend] = useState(false);
     const [countdown, setCountdown] = useState(30);
@@ -41,13 +46,50 @@ export default function ResetPassword() {
         return () => clearInterval(timer);
     }, [step, canResend, countdown]);
 
+    // Fetch countries
+    useEffect(() => {
+        async function fetchCountries() {
+            setLoadingCountries(true);
+            try {
+                const res = await fetch("https://restcountries.com/v3.1/all?fields=name,cca2,idd,flags");
+                const data = await res.json();
+
+                const formatted = data
+                    .filter(c => c.idd?.root && (c.idd.suffixes?.length > 0 || c.idd.suffixes === undefined))
+                    .map(c => ({
+                        name: c.name.common,
+                        cca2: c.cca2,
+                        // Fix for root+suffix combination
+                        code: c.idd.root + (c.idd.suffixes ? c.idd.suffixes[0] : ""),
+                        flag: c.flags.svg
+                    }))
+                    .sort((a, b) => a.name.localeCompare(b.name));
+
+                setCountries(formatted);
+
+                // Try to find Morocco
+                const morocco = formatted.find(c => c.cca2 === "MA");
+                if (morocco) setSelectedCountry(morocco);
+            } catch (err) {
+                console.error("Failed to fetch countries", err);
+            } finally {
+                setLoadingCountries(false);
+            }
+        }
+        fetchCountries();
+    }, []);
+
     async function handleResendCode() {
         if (!canResend) return;
         setLoading(true);
         try {
+            const payload = method === "email"
+                ? { email }
+                : { phone: selectedCountry.code + phone.replace(/^0+/, "") }; // Handle phone format
+
             await api("/api/auth/forgot-password", {
                 method: "POST",
-                body: method === "email" ? { email } : { phone },
+                body: payload,
             });
             toast.success("Nouveau code envoyé !");
             setCanResend(false);
@@ -95,9 +137,13 @@ export default function ResetPassword() {
         setLoading(true);
 
         try {
+            const payload = method === "email"
+                ? { email }
+                : { phone: selectedCountry.code + phone.replace(/^0+/, "") };
+
             await api("/api/auth/forgot-password", {
                 method: "POST",
-                body: method === "email" ? { email } : { phone },
+                body: payload,
             });
             setStep(2);
         } catch (err) {
@@ -117,9 +163,14 @@ export default function ResetPassword() {
 
         setLoading(true);
         try {
+            // Reconstruct phone if using SMS
+            const finalPhone = selectedCountry.code + phone.replace(/^0+/, "");
+
             await api("/api/auth/verify-code", {
                 method: "POST",
-                body: method === "email" ? { email: email, code } : { phone: phone, code },
+                body: method === "email"
+                    ? { email: email, code }
+                    : { phone: finalPhone, code },
             });
             setStep(3);
         } catch (err) {
@@ -141,11 +192,13 @@ export default function ResetPassword() {
         setLoading(true);
 
         try {
+            const finalPhone = selectedCountry.code + phone.replace(/^0+/, "");
+
             await api("/api/auth/reset-password", {
                 method: "POST",
                 body: method === "email"
                     ? { email, code, token: linkToken, password }
-                    : { phone, code, token: linkToken, password },
+                    : { phone: finalPhone, code, token: linkToken, password },
             });
             setSuccess(true);
             setTimeout(() => navigate("/login"), 3000);
@@ -215,15 +268,42 @@ export default function ResetPassword() {
                                                     onChange={(e) => setEmail(e.target.value)}
                                                 />
                                             ) : (
-                                                <input
-                                                    key="phone-input"
-                                                    type="tel"
-                                                    placeholder="Numéro de téléphone (ex: +33...)"
-                                                    required
-                                                    className="input-focus w-full rounded-xl bg-gray-100 px-5 py-3 placeholder-gray-500 transition text-gray-900"
-                                                    value={phone}
-                                                    onChange={(e) => setPhone(e.target.value)}
-                                                />
+                                                <div className="flex gap-2">
+                                                    {/* Country Selector */}
+                                                    <div className="relative w-1/3">
+                                                        <select
+                                                            className="appearance-none input-focus w-full rounded-xl bg-gray-100 pl-3 pr-8 py-3 transition text-gray-900 cursor-pointer"
+                                                            value={selectedCountry.cca2}
+                                                            onChange={(e) => {
+                                                                const c = countries.find(c => c.cca2 === e.target.value);
+                                                                if (c) setSelectedCountry(c);
+                                                            }}
+                                                        >
+                                                            {countries.map((c) => (
+                                                                <option key={c.cca2} value={c.cca2}>
+                                                                    {c.cca2} ({c.code})
+                                                                </option>
+                                                            ))}
+                                                        </select>
+                                                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                                                            <span className="text-xs">▼</span>
+                                                        </div>
+                                                        <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                                            {/* Optional flag display if needed, but select usually handles native text nicely */}
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Phone Input */}
+                                                    <input
+                                                        key="phone-input"
+                                                        type="tel"
+                                                        placeholder="Numéro de téléphone"
+                                                        required
+                                                        className="input-focus flex-1 rounded-xl bg-gray-100 px-5 py-3 placeholder-gray-500 transition text-gray-900"
+                                                        value={phone}
+                                                        onChange={(e) => setPhone(e.target.value)}
+                                                    />
+                                                </div>
                                             )}
                                         </div>
                                         <button
@@ -243,7 +323,7 @@ export default function ResetPassword() {
                                         Vérification
                                     </h1>
                                     <p className="text-gray-500 text-sm mb-8">
-                                        Saisissez le code à 6 chiffres envoyé à <strong>{method === "email" ? email : phone}</strong>.
+                                        Saisissez le code à 6 chiffres envoyé à <strong>{method === "email" ? email : `${selectedCountry.code} ${phone}`}</strong>.
                                     </p>
 
                                     <form onSubmit={handleVerifyCode}>
