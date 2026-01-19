@@ -4,7 +4,7 @@ import Router from "./router";
 export default function App() {
   return (
     <>
-      <Toaster position="top-right" />
+      <Toaster position="top-center" />
       <Router />
     </>
   );

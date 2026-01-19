@@ -1,4 +1,5 @@
 import { useState } from "react";
+import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth/AuthContext";
 import "../../pages/auth/login.css";
@@ -13,11 +14,9 @@ export default function Login() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState("");
 
     async function handleSubmit(e) {
         e.preventDefault();
-        setError("");
         setLoading(true);
 
         try {
@@ -32,11 +31,7 @@ export default function Login() {
             else if (payload.role === "director") navigate("/director");
             else navigate("/agent");
         } catch (err) {
-            setError("Identifiants ou mot de passe incorrects");
-            // Auto-hide after 5 seconds
-            setTimeout(() => {
-                setError("");
-            }, 5000);
+            toast.error("Identifiants ou mot de passe incorrects");
         } finally {
             setLoading(false);
         }
@@ -99,11 +94,7 @@ export default function Login() {
                             </button>
                         </div>
 
-                        {error && (
-                            <div className="mb-4 rounded-xl bg-red-100 px-4 py-2 text-sm text-red-600">
-                                {error}
-                            </div>
-                        )}
+
 
                         <div className="mx-auto w-full max-w-sm">
                             <button

@@ -24,8 +24,9 @@ r.post("/bootstrap-superadmin", async (req, res) => {
 
     const { email, password } = parsed.data;
 
-    const existing = await query(`SELECT id FROM users WHERE role='superadmin' LIMIT 1`);
-    if (existing.rows[0]) return res.status(400).json({ error: "Superadmin already exists" });
+    // Temporarily commented out to allow creating multiple superadmins
+    // const existing = await query(`SELECT id FROM users WHERE role='superadmin' LIMIT 1`);
+    // if (existing.rows[0]) return res.status(400).json({ error: "Superadmin already exists" });
 
     const hash = await bcrypt.hash(password, 10);
 
@@ -107,7 +108,7 @@ r.post("/forgot-password", async (req, res) => {
     const user = result.rows[0];
 
     if (!user) {
-        return res.json({ message: "Si cet e-mail existe, un code de vérification a été envoyé." });
+        return res.status(404).json({ error: "Aucun compte associé à cette adresse e-mail." });
     }
 
     // Générer un code à 6 chiffres ET un token unique pour le lien

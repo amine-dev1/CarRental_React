@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import toast from "react-hot-toast";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "../../api/http";
 import "../../pages/auth/login.css";
@@ -21,6 +22,40 @@ export default function ResetPassword() {
     const [success, setSuccess] = useState(false);
     const [error, setError] = useState("");
     const [tokenVerifying, setTokenVerifying] = useState(false);
+
+    // Resend Code Logic
+    const [canResend, setCanResend] = useState(false);
+    const [countdown, setCountdown] = useState(30);
+
+    useEffect(() => {
+        let timer;
+        if (step === 2 && !canResend && countdown > 0) {
+            timer = setInterval(() => {
+                setCountdown((prev) => prev - 1);
+            }, 1000);
+        } else if (countdown === 0) {
+            setCanResend(true);
+        }
+        return () => clearInterval(timer);
+    }, [step, canResend, countdown]);
+
+    async function handleResendCode() {
+        if (!canResend) return;
+        setLoading(true);
+        try {
+            await api("/api/auth/forgot-password", {
+                method: "POST",
+                body: { email },
+            });
+            toast.success("Nouveau code envoyé !");
+            setCanResend(false);
+            setCountdown(30);
+        } catch (err) {
+            toast.error(err.message || "Erreur lors de l'envoi.");
+        } finally {
+            setLoading(false);
+        }
+    }
 
     // Vérifier si un token est présent dans l'URL
     useEffect(() => {
@@ -64,7 +99,9 @@ export default function ResetPassword() {
             });
             setStep(2);
         } catch (err) {
-            setError(err.message || "Une erreur est survenue.");
+            const message = err.message || "Une erreur est survenue.";
+            setError(message);
+            toast.error(message);
         } finally {
             setLoading(false);
         }
@@ -156,7 +193,6 @@ export default function ResetPassword() {
                                                 onChange={(e) => setEmail(e.target.value)}
                                             />
                                         </div>
-                                        {error && <div className="mb-4 text-sm text-red-600">{error}</div>}
                                         <button
                                             type="submit"
                                             disabled={loading}
@@ -198,7 +234,21 @@ export default function ResetPassword() {
                                         >
                                             {loading ? "Vérification..." : "Vérifier le code"}
                                         </button>
-                                        <div className="mt-4 text-center">
+                                        <div className="mt-4 flex flex-col items-center gap-3 text-center">
+                                            <button
+                                                type="button"
+                                                onClick={handleResendCode}
+                                                disabled={!canResend || loading}
+                                                className={`text-sm font-medium transition ${canResend
+                                                    ? "text-blue-600 hover:text-blue-700 cursor-pointer"
+                                                    : "text-gray-400 cursor-not-allowed"
+                                                    }`}
+                                            >
+                                                {canResend
+                                                    ? "Renvoyer le code"
+                                                    : `Renvoyer le code (${countdown}s)`}
+                                            </button>
+
                                             <button type="button" onClick={() => setStep(1)} className="text-xs text-gray-500 hover:text-blue-600 transition">
                                                 Changer d'adresse email
                                             </button>
