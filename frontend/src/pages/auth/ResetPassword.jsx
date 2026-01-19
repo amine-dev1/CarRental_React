@@ -12,13 +12,15 @@ export default function ResetPassword() {
     const [searchParams] = useSearchParams();
 
     const [email, setEmail] = useState("");
+    const [phone, setPhone] = useState("");
+    const [method, setMethod] = useState("email"); // 'email' | 'sms'
     const [code, setCode] = useState("");
     const [linkToken, setLinkToken] = useState(""); // Token du lien
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
 
     const [loading, setLoading] = useState(false);
-    const [step, setStep] = useState(1); // 1: Email, 2: Code, 3: Password
+    const [step, setStep] = useState(1); // 1: Email/Phone, 2: Code, 3: Password
     const [success, setSuccess] = useState(false);
     const [error, setError] = useState("");
     const [tokenVerifying, setTokenVerifying] = useState(false);
@@ -45,7 +47,7 @@ export default function ResetPassword() {
         try {
             await api("/api/auth/forgot-password", {
                 method: "POST",
-                body: { email },
+                body: method === "email" ? { email } : { phone },
             });
             toast.success("Nouveau code envoyé !");
             setCanResend(false);
@@ -95,7 +97,7 @@ export default function ResetPassword() {
         try {
             await api("/api/auth/forgot-password", {
                 method: "POST",
-                body: { email },
+                body: method === "email" ? { email } : { phone },
             });
             setStep(2);
         } catch (err) {
@@ -117,7 +119,7 @@ export default function ResetPassword() {
         try {
             await api("/api/auth/verify-code", {
                 method: "POST",
-                body: { email, code },
+                body: method === "email" ? { email: email, code } : { phone: phone, code },
             });
             setStep(3);
         } catch (err) {
@@ -141,7 +143,9 @@ export default function ResetPassword() {
         try {
             await api("/api/auth/reset-password", {
                 method: "POST",
-                body: { email, code, token: linkToken, password },
+                body: method === "email"
+                    ? { email, code, token: linkToken, password }
+                    : { phone, code, token: linkToken, password },
             });
             setSuccess(true);
             setTimeout(() => navigate("/login"), 3000);
@@ -178,20 +182,49 @@ export default function ResetPassword() {
                                     <h1 className="text-3xl font-bold text-gray-800 mb-2 leading-tight">
                                         Mot de passe oublié ?
                                     </h1>
-                                    <p className="text-gray-500 text-sm mb-8">
-                                        Entrez votre e-mail pour recevoir un code de vérification à 6 chiffres.
+                                    <p className="text-gray-500 text-sm mb-6">
+                                        Choisissez comment recevoir votre code de vérification.
                                     </p>
+
+                                    {/* Toggle Method */}
+                                    <div className="flex rounded-lg bg-gray-100 p-1 mb-6">
+                                        <button
+                                            className={`flex-1 rounded-md py-2 text-sm font-medium transition cursor-pointer ${method === "email" ? "bg-white text-blue-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+                                            onClick={() => setMethod("email")}
+                                        >
+                                            Email
+                                        </button>
+                                        <button
+                                            className={`flex-1 rounded-md py-2 text-sm font-medium transition cursor-pointer ${method === "sms" ? "bg-white text-blue-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+                                            onClick={() => setMethod("sms")}
+                                        >
+                                            SMS
+                                        </button>
+                                    </div>
 
                                     <form onSubmit={handleRequestCode}>
                                         <div className="mb-6">
-                                            <input
-                                                type="email"
-                                                placeholder="Adresse e-mail"
-                                                required
-                                                className="input-focus w-full rounded-xl bg-gray-100 px-5 py-3 placeholder-gray-500 transition text-gray-900"
-                                                value={email}
-                                                onChange={(e) => setEmail(e.target.value)}
-                                            />
+                                            {method === "email" ? (
+                                                <input
+                                                    key="email-input"
+                                                    type="email"
+                                                    placeholder="Adresse e-mail"
+                                                    required
+                                                    className="input-focus w-full rounded-xl bg-gray-100 px-5 py-3 placeholder-gray-500 transition text-gray-900"
+                                                    value={email}
+                                                    onChange={(e) => setEmail(e.target.value)}
+                                                />
+                                            ) : (
+                                                <input
+                                                    key="phone-input"
+                                                    type="tel"
+                                                    placeholder="Numéro de téléphone (ex: +33...)"
+                                                    required
+                                                    className="input-focus w-full rounded-xl bg-gray-100 px-5 py-3 placeholder-gray-500 transition text-gray-900"
+                                                    value={phone}
+                                                    onChange={(e) => setPhone(e.target.value)}
+                                                />
+                                            )}
                                         </div>
                                         <button
                                             type="submit"
@@ -210,7 +243,7 @@ export default function ResetPassword() {
                                         Vérification
                                     </h1>
                                     <p className="text-gray-500 text-sm mb-8">
-                                        Saisissez le code à 6 chiffres envoyé à <strong>{email}</strong>.
+                                        Saisissez le code à 6 chiffres envoyé à <strong>{method === "email" ? email : phone}</strong>.
                                     </p>
 
                                     <form onSubmit={handleVerifyCode}>
@@ -250,7 +283,7 @@ export default function ResetPassword() {
                                             </button>
 
                                             <button type="button" onClick={() => setStep(1)} className="text-xs text-gray-500 hover:text-blue-600 transition">
-                                                Changer d'adresse email
+                                                Changer de méthode / d'adresse
                                             </button>
                                         </div>
                                     </form>

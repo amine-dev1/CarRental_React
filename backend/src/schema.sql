@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS users (
   id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   enterprise_id uuid REFERENCES enterprises(id) ON DELETE RESTRICT,
   email text UNIQUE NOT NULL,
+  phone text UNIQUE,
   password_hash text NOT NULL,
   role text NOT NULL CHECK (role IN ('superadmin','director','agent')),
   reset_token text,
