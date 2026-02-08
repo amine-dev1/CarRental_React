@@ -74,6 +74,7 @@ r.post("/login", async (req, res) => {
             id: user.id,
             email: user.email,
             role: user.role,
+            full_name: user.full_name,
             enterprise_id: user.enterprise_id, // ✅ key
         },
         process.env.JWT_SECRET,
@@ -86,6 +87,7 @@ r.post("/login", async (req, res) => {
             id: user.id,
             email: user.email,
             role: user.role,
+            full_name: user.full_name,
             enterprise_id: user.enterprise_id,
         },
     });
@@ -308,7 +310,8 @@ r.post("/reset-password", async (req, res) => {
 
 // optional: whoami
 r.get("/me", requireAuth, async (req, res) => {
-    res.json({ user: req.user });
+    const result = await query("SELECT id, email, role, full_name, enterprise_id FROM users WHERE id = $1", [req.user.id]);
+    res.json({ user: result.rows[0] });
 });
 
 export default r;

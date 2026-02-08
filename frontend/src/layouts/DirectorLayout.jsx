@@ -34,8 +34,9 @@ export default function DirectorLayout() {
             )}
 
             {/* Sidebar */}
+            {/* Sidebar */}
             <aside className={`
-                fixed inset-y-0 left-0 z-50 w-80 bg-background-sidebar p-6 flex flex-col transition-all duration-300 lg:static lg:translate-x-0
+                fixed inset-y-0 left-0 z-50 w-80 bg-[#a6a09b] p-6 flex flex-col transition-all duration-300 lg:static lg:translate-x-0
                 ${sidebarOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"}
             `}>
                 {/* Logo Section */}
@@ -45,13 +46,17 @@ export default function DirectorLayout() {
                             <Briefcase size={24} strokeWidth={2.5} />
                         </div>
                         <div className="flex flex-col">
-                            <span className="text-xl font-bold text-white tracking-tight">Directeur</span>
-                            <span className="text-xs text-text-muted font-medium">Console de gestion</span>
+                            <span className="text-xl font-bold text-gray-900 tracking-tight">
+                                Directeur
+                            </span>
+                            <span className="text-xs text-gray-700 font-medium">
+                                Console de gestion
+                            </span>
                         </div>
                     </div>
                     <button
                         onClick={() => setSidebarOpen(false)}
-                        className="lg:hidden p-2 text-text-muted hover:text-white hover:bg-white/10 rounded-lg transition-all"
+                        className="lg:hidden p-2 text-gray-700 hover:text-gray-900 hover:bg-black/5 rounded-lg transition-all"
                     >
                         <X size={20} />
                     </button>
@@ -59,93 +64,42 @@ export default function DirectorLayout() {
 
                 {/* Navigation */}
                 <nav className="space-y-2 flex-1">
-                    <NavLink
-                        to="/director"
-                        end
-                        onClick={() => setSidebarOpen(false)}
-                        className={({ isActive }) =>
-                            `group flex items-center justify-between rounded-xl px-4 py-3.5 font-medium transition-all duration-200 ${isActive
-                                ? "bg-secondary text-white shadow-lg shadow-secondary/30"
-                                : "text-text-muted hover:bg-white/5 hover:text-white"
-                            }`
-                        }
-                    >
-                        <div className="flex items-center gap-3">
-                            <LayoutDashboard size={20} strokeWidth={2} />
-                            <span>Tableau de bord</span>
-                        </div>
-                        <ChevronRight
-                            size={16}
-                            className="opacity-0 group-hover:opacity-100 transition-opacity"
-                        />
-                    </NavLink>
-
-                    <NavLink
-                        to="/director/fleet"
-                        onClick={() => setSidebarOpen(false)}
-                        className={({ isActive }) =>
-                            `group flex items-center justify-between rounded-xl px-4 py-3.5 font-medium transition-all duration-200 ${isActive
-                                ? "bg-secondary text-white shadow-lg shadow-secondary/30"
-                                : "text-text-muted hover:bg-white/5 hover:text-white"
-                            }`
-                        }
-                    >
-                        <div className="flex items-center gap-3">
-                            <Car size={20} strokeWidth={2} />
-                            <span>Gestion de la flotte</span>
-                        </div>
-                        <ChevronRight
-                            size={16}
-                            className="opacity-0 group-hover:opacity-100 transition-opacity"
-                        />
-                    </NavLink>
-
-                    <NavLink
-                        to="/director/customers"
-                        onClick={() => setSidebarOpen(false)}
-                        className={({ isActive }) =>
-                            `group flex items-center justify-between rounded-xl px-4 py-3.5 font-medium transition-all duration-200 ${isActive
-                                ? "bg-secondary text-white shadow-lg shadow-secondary/30"
-                                : "text-text-muted hover:bg-white/5 hover:text-white"
-                            }`
-                        }
-                    >
-                        <div className="flex items-center gap-3">
-                            <Users size={20} strokeWidth={2} />
-                            <span>Clients</span>
-                        </div>
-                        <ChevronRight
-                            size={16}
-                            className="opacity-0 group-hover:opacity-100 transition-opacity"
-                        />
-                    </NavLink>
-
-                    <NavLink
-                        to="/director/rentals"
-                        onClick={() => setSidebarOpen(false)}
-                        className={({ isActive }) =>
-                            `group flex items-center justify-between rounded-xl px-4 py-3.5 font-medium transition-all duration-200 ${isActive
-                                ? "bg-secondary text-white shadow-lg shadow-secondary/30"
-                                : "text-text-muted hover:bg-white/5 hover:text-white"
-                            }`
-                        }
-                    >
-                        <div className="flex items-center gap-3">
-                            <CalendarRange size={20} strokeWidth={2} />
-                            <span>Locations</span>
-                        </div>
-                        <ChevronRight
-                            size={16}
-                            className="opacity-0 group-hover:opacity-100 transition-opacity"
-                        />
-                    </NavLink>
+                    {[
+                        { to: "/director", label: "Tableau de bord", icon: <LayoutDashboard size={20} /> },
+                        { to: "/director/fleet", label: "Gestion de la flotte", icon: <Car size={20} /> },
+                        { to: "/director/customers", label: "Clients", icon: <Users size={20} /> },
+                        { to: "/director/rentals", label: "Locations", icon: <CalendarRange size={20} /> },
+                    ].map(({ to, label, icon }) => (
+                        <NavLink
+                            key={to}
+                            to={to}
+                            end={to === "/director"}
+                            onClick={() => setSidebarOpen(false)}
+                            className={({ isActive }) =>
+                                `group flex items-center justify-between rounded-xl px-4 py-3.5 font-medium transition-all duration-200 ${
+                                    isActive
+                                        ? "bg-secondary text-white shadow-lg shadow-secondary/30"
+                                        : "text-gray-800 hover:bg-black/5 hover:text-gray-900"
+                                }`
+                            }
+                        >
+                            <div className="flex items-center gap-3">
+                                {icon}
+                                <span>{label}</span>
+                            </div>
+                            <ChevronRight
+                                size={16}
+                                className="opacity-0 group-hover:opacity-100 transition-opacity"
+                            />
+                        </NavLink>
+                    ))}
                 </nav>
 
                 {/* Logout Button */}
-                <div className="pt-4 border-t border-white/10">
+                <div className="pt-4 border-t border-black/10">
                     <button
                         onClick={handleLogout}
-                        className="group flex items-center justify-between w-full rounded-xl px-4 py-3.5 font-medium text-text-muted hover:bg-error/10 hover:text-error transition-all duration-200"
+                        className="group flex items-center justify-between w-full rounded-xl px-4 py-3.5 font-medium text-gray-800 hover:bg-error/10 hover:text-error transition-all duration-200"
                     >
                         <div className="flex items-center gap-3">
                             <LogOut size={20} strokeWidth={2} />
@@ -158,6 +112,7 @@ export default function DirectorLayout() {
                     </button>
                 </div>
             </aside>
+
 
             {/* Main Content Area */}
             <div className="flex-1 flex flex-col h-screen overflow-hidden">
@@ -184,10 +139,12 @@ export default function DirectorLayout() {
                         </button>
 
                         <div className="hidden lg:flex items-center gap-2 bg-background rounded-lg px-3 py-2">
-                            <div className="w-8 h-8 bg-secondary rounded-lg flex items-center justify-center text-white text-sm font-semibold">
-                                D
+                            <div className="w-8 h-8 bg-secondary rounded-lg flex items-center justify-center text-white text-sm font-semibold uppercase">
+                                {user?.full_name ? user.full_name.split(' ').map(n => n[0]).join('').substring(0, 2) : "D"}
                             </div>
-                            <span className="text-sm font-medium text-text-primary">Directeur</span>
+                            <span className="text-sm font-medium text-text-primary">
+                                {user?.full_name || "Directeur"}
+                            </span>
                         </div>
                     </div>
                 </header>

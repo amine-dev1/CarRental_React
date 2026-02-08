@@ -9,16 +9,64 @@ const r = Router();
 r.use(requireAuth);
 r.use(requireRole("superadmin"));
 
-r.get("/stats", async (_req, res) => {
+r.get("/stats", async (req, res) => {
+    const { period = 'monthly' } = req.query;
+    
     const enterprises = await query("SELECT count(*) FROM enterprises");
     const users = await query("SELECT count(*) FROM users");
     const rentals = await query("SELECT count(*) FROM rentals WHERE status != 'canceled'");
+    
+    // Total Revenue (all time cents)
+    const revTotal = await query("SELECT COALESCE(SUM(amount_cents), 0) as total FROM payments");
+    
+    let chartQuery = "";
+    if (period === 'weekly') {
+        chartQuery = `
+            SELECT 
+                TO_CHAR(paid_at, 'DD/MM') as label,
+                SUM(amount_cents) as amount,
+                MIN(paid_at) as sort_val
+            FROM payments
+            WHERE paid_at >= NOW() - INTERVAL '7 days'
+            GROUP BY label
+            ORDER BY sort_val
+        `;
+    } else if (period === 'annual') {
+        chartQuery = `
+            SELECT 
+                TO_CHAR(paid_at, 'YYYY') as label,
+                SUM(amount_cents) as amount,
+                MIN(paid_at) as sort_val
+            FROM payments
+            WHERE paid_at >= NOW() - INTERVAL '5 years'
+            GROUP BY label
+            ORDER BY sort_val
+        `;
+    } else {
+        // Default monthly
+        chartQuery = `
+            SELECT 
+                TO_CHAR(paid_at, 'Mon') as label,
+                SUM(amount_cents) as amount,
+                MIN(paid_at) as sort_val
+            FROM payments
+            WHERE paid_at >= NOW() - INTERVAL '6 months'
+            GROUP BY label
+            ORDER BY sort_val
+        `;
+    }
+
+    const revChart = await query(chartQuery);
 
     res.json({
         enterprises: parseInt(enterprises.rows[0].count),
         users: parseInt(users.rows[0].count),
         rentals: parseInt(rentals.rows[0].count),
-        revenue: 0 // Placeholder for now
+        revenue: parseInt(revTotal.rows[0].total) / 100,
+        chartData: revChart.rows.map(row => ({
+            label: row.label,
+            revenue: parseInt(row.amount) / 100
+        }))
     });
 });
 

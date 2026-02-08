@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Menu, X, LayoutDashboard, Building2, LogOut, ChevronRight, Sparkles } from "lucide-react";
 
 export default function SuperAdminLayout() {
-    const { logout } = useAuth();
+    const { user, logout } = useAuth();
     const navigate = useNavigate();
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -31,11 +31,8 @@ export default function SuperAdminLayout() {
                 {/* Logo Section */}
                 <div className="flex items-center justify-between mb-12">
                     <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-secondary rounded-2xl flex items-center justify-center text-white shadow-lg shadow-secondary/30">
-                            <Sparkles size={24} strokeWidth={2.5} />
-                        </div>
                         <div className="flex flex-col">
-                            <span className="text-xl font-bold text-white tracking-tight">SuperAdmin</span>
+                            <span className="text-xl font-bold text-black tracking-tight">SuperAdmin</span>
                             <span className="text-xs text-text-muted font-medium">Admin Platform</span>
                         </div>
                     </div>
@@ -134,10 +131,12 @@ export default function SuperAdminLayout() {
                         </button>
 
                         <div className="hidden lg:flex items-center gap-2 bg-background rounded-lg px-3 py-2">
-                            <div className="w-8 h-8 bg-secondary rounded-lg flex items-center justify-center text-white text-sm font-semibold">
-                                SA
+                            <div className="w-8 h-8 bg-secondary rounded-lg flex items-center justify-center text-white text-sm font-semibold uppercase">
+                                {user?.full_name ? user.full_name.split(' ').map(n => n[0]).join('').substring(0, 2) : "SA"}
                             </div>
-                            <span className="text-sm font-medium text-text-primary">Super Admin</span>
+                            <span className="text-sm font-medium text-text-primary">
+                                {user?.full_name || "Super Admin"}
+                            </span>
                         </div>
                     </div>
                 </header>
