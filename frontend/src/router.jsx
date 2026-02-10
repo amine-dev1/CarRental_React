@@ -13,12 +13,14 @@ import Customers from "./pages/director/Customers";
 import Rentals from "./pages/director/Rentals";
 
 import DirectorLayout from "./layouts/DirectorLayout";
+import LandingPage from "./pages/LandingPage";
 
 export default function Router() {
     return (
         <BrowserRouter>
             <AuthProvider>
                 <Routes>
+                    <Route path="/" element={<LandingPage />} />
                     <Route path="/login" element={<Login />} />
                     <Route path="/reset-password" element={<ResetPassword />} />
 
