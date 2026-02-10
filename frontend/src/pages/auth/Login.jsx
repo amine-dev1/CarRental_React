@@ -45,7 +45,10 @@ export default function Login() {
                 <div className="form-container w-full md:w-1/2 p-8 md:p-12 lg:p-16 flex flex-col justify-center">
 
                     {/* Logo */}
-                    <div className="mb-8 flex items-center">
+                    <div 
+                        className="mb-8 flex items-center cursor-pointer" 
+                        onClick={() => navigate("/")}
+                    >
                         <img src={logo} alt="Logo" className="mr-2 h-11 w-11" />
                         <span className="text-2xl font-bold text-slate-900">
                             Rental<span className="text-blue-700">Car</span>

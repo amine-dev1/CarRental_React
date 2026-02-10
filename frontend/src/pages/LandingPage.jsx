@@ -2,6 +2,7 @@ import React from 'react';
 import Header from '../components/landing/Header';
 import Hero from '../components/landing/Hero';
 import Features from '../components/landing/Features';
+import DemoRequest from '../components/landing/DemoRequest';
 import Footer from '../components/landing/Footer';
 
 const LandingPage = () => {
@@ -11,6 +12,7 @@ const LandingPage = () => {
             <main>
                 <Hero />
                 <Features />
+                <DemoRequest />
             </main>
             <Footer />
         </div>

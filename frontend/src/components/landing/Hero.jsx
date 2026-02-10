@@ -1,26 +1,50 @@
 import React, { useState } from 'react';
-import { Calendar, MapPin, Search, TrendingUp, Users, Car, BarChart3 } from 'lucide-react';
+import { Calendar, MapPin, Search, TrendingUp, Users, Car, BarChart3, Loader2 } from 'lucide-react';
+import { scrollToSection } from '../../utils/scroll';
+import { api } from '../../api/http';
+import toast from 'react-hot-toast';
+import heroBg from "../../assets/hero-bg.jpg";
 
 const Hero = () => {
+    const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
         email: '',
         companyName: '',
         fleet: ''
     });
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log('Demande de démo:', formData);
+        setLoading(true);
+        try {
+            await api('/api/demo', {
+                method: 'POST',
+                body: { ...formData, type: 'trial' }
+            });
+            toast.success('demande de essai gratuit est envoyée nous vous reponderons des que possible', {
+                duration: 5000,
+            });
+            setFormData({
+                email: '',
+                companyName: '',
+                fleet: ''
+            });
+        } catch (error) {
+            console.error('Error trial request:', error);
+            toast.error(error.message || "Une erreur est survenue lors de l'envoi");
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
-        <section className="relative bg-gradient-to-br from-[#2C5F8D] via-[#1E3A5F] to-[#2C5F8D] overflow-hidden">
+        <section id="accueil" className="relative bg-gradient-to-br from-[#2C5F8D] via-[#1E3A5F] to-[#2C5F8D] overflow-hidden">
             {/* Background Image with Overlay */}
             <div className="absolute inset-0">
                 <img 
-                    src="https://img.freepik.com/free-photo/modern-car-rental-office-with-digital-dashboard_23-2151674523.jpg" 
+                    src={heroBg} 
                     alt="Car Rental Business" 
-                    className="w-full h-full object-cover opacity-15"
+                    className="w-full h-full object-cover opacity-30"
                 />
                 <div className="absolute inset-0 bg-gradient-to-br from-[#2C5F8D]/90 via-[#1E3A5F]/85 to-[#2C5F8D]/90"></div>
             </div>
@@ -82,7 +106,7 @@ const Hero = () => {
                                             placeholder="votre@email.com"
                                             value={formData.email}
                                             onChange={(e) => setFormData({...formData, email: e.target.value})}
-                                            className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2C5F8D] focus:border-transparent outline-none transition-all"
+                                            className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2C5F8D] focus:border-transparent outline-none transition-all text-gray-900"
                                             required
                                         />
                                     </div>
@@ -98,7 +122,7 @@ const Hero = () => {
                                             placeholder="Mon Agence"
                                             value={formData.companyName}
                                             onChange={(e) => setFormData({...formData, companyName: e.target.value})}
-                                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2C5F8D] focus:border-transparent outline-none transition-all"
+                                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2C5F8D] focus:border-transparent outline-none transition-all text-gray-900"
                                             required
                                         />
                                     </div>
@@ -110,7 +134,7 @@ const Hero = () => {
                                         <select
                                             value={formData.fleet}
                                             onChange={(e) => setFormData({...formData, fleet: e.target.value})}
-                                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2C5F8D] focus:border-transparent outline-none transition-all"
+                                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2C5F8D] focus:border-transparent outline-none transition-all text-gray-900"
                                             required
                                         >
                                             <option value="">Sélectionner</option>
@@ -124,10 +148,15 @@ const Hero = () => {
 
                                 <button
                                     type="submit"
-                                    className="w-full bg-[#2C5F8D] text-white py-3.5 px-6 rounded-lg hover:bg-[#1E3A5F] transition-colors font-semibold flex items-center justify-center space-x-2 shadow-lg"
+                                    disabled={loading}
+                                    className={`w-full bg-[#2C5F8D] text-white py-3.5 px-6 rounded-lg hover:bg-[#1E3A5F] transition-colors font-semibold flex items-center justify-center space-x-2 shadow-lg ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
                                 >
-                                    <span>Démarrer l'essai gratuit</span>
-                                    <Search size={20} />
+                                    <span>{loading ? 'Envoi en cours...' : "Démarrer l'essai gratuit"}</span>
+                                    {loading ? (
+                                        <Loader2 size={20} className="animate-spin text-white" />
+                                    ) : (
+                                        <Search size={20} />
+                                    )}
                                 </button>
                                 <p className="text-xs text-gray-500 text-center">
                                     Aucune carte bancaire requise • 14 jours d'essai gratuit
@@ -197,7 +226,7 @@ const Hero = () => {
             </div>
 
             {/* Custom Animations */}
-            <style jsx>{`
+            <style>{`
                 @keyframes float-slow {
                     0%, 100% { transform: translate(0, 0); }
                     50% { transform: translate(30px, -30px); }

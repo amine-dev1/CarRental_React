@@ -1,18 +1,28 @@
 import React from 'react';
-import {   Facebook,Twitter,Instagram,Linkedin,MessageCircle, Mail, Phone, MapPin } from 'lucide-react';
+import { Facebook, Twitter, Instagram, Linkedin, Mail, Phone, MapPin } from 'lucide-react';
 import { FaWhatsapp } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 import logo from "../../assets/logo-blue.png";
+
 const Footer = () => {
+    const navigate = useNavigate();
+
     return (
         <footer className="bg-gray-900 text-gray-300">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
                 <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
                     {/* Company Info */}
                     <div className="space-y-4">
-                        <div className="flex items-center space-x-2">
-                            <img src={logo} alt="logo" className="w-8 h-8" />
+                        <div 
+                            className="flex items-center space-x-2 cursor-pointer"
+                            onClick={() => {
+                                navigate("/");
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                            }}
+                        >
+                            <img src={logo} alt="logo" className="h-11 w-11" />
                             <span className="text-2xl font-bold text-white">
-                                Rental<span className="text-[#4A7BA7]">Car</span>
+                                Rental<span className="text-blue-700">Car</span>
                             </span>
                         </div>
                         <p className="text-sm leading-relaxed">

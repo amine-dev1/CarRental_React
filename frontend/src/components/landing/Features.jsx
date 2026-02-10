@@ -1,18 +1,23 @@
 import React from 'react';
-import { 
-    LayoutDashboard, 
-    Car, 
-    Users, 
-    Calendar, 
-    CreditCard, 
-    BarChart3, 
-    Headphones, 
+import {
+    LayoutDashboard,
+    Car,
+    Calendar,
+    Users,
+    ShieldCheck,
+    MessageSquare,
+    CreditCard,
+    FileText,
+    Settings,
+    Smartphone,
+    BarChart3,
+    Zap,
+    Bell,
     Shield,
     Clock,
-    FileText,
-    Bell,
-    Smartphone
+    Headphones
 } from 'lucide-react';
+import { scrollToSection } from '../../utils/scroll';
 
 const Features = () => {
     const features = [
@@ -79,7 +84,7 @@ const Features = () => {
     ];
 
     return (
-        <section className="py-20 bg-gray-50">
+        <section id="services" className="py-20 bg-gray-50">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Section Header */}
                 <div className="text-center max-w-3xl mx-auto mb-16">
@@ -131,12 +136,20 @@ const Features = () => {
                             Rejoignez plus de 500 agences qui ont déjà fait confiance à RentalCar pour digitaliser et développer leur activité.
                         </p>
                         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                            <button className="bg-white text-[#2C5F8D] px-8 py-4 rounded-lg hover:bg-gray-100 transition-colors font-semibold text-lg shadow-lg">
+                            <a 
+                                href="#contact" 
+                                onClick={(e) => { e.preventDefault(); scrollToSection('#contact', 1000); }}
+                                className="bg-white text-[#2C5F8D] px-8 py-4 rounded-lg hover:bg-gray-100 transition-colors font-semibold text-lg shadow-lg text-center"
+                            >
                                 Essai gratuit 14 jours
-                            </button>
-                            <button className="bg-transparent border-2 border-white text-white px-8 py-4 rounded-lg hover:bg-white/10 transition-colors font-semibold text-lg">
+                            </a>
+                            <a 
+                                href="#contact" 
+                                onClick={(e) => { e.preventDefault(); scrollToSection('#contact', 1000); }}
+                                className="bg-transparent border-2 border-white text-white px-8 py-4 rounded-lg hover:bg-white/10 transition-colors font-semibold text-lg text-center"
+                            >
                                 Demander une démo
-                            </button>
+                            </a>
                         </div>
                         <p className="text-sm text-blue-100 mt-4">
                             Sans engagement • Configuration en 5 minutes
