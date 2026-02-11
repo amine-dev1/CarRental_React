@@ -33,7 +33,7 @@ r.post("/bootstrap-superadmin", async (req, res) => {
     const result = await query(
         `INSERT INTO users(email, password_hash, role, enterprise_id)
      VALUES($1,$2,'superadmin',NULL)
-     RETURNING id, email, role, enterprise_id, created_at`,
+     RETURNING id, email, role, full_name, profile_photo, enterprise_id, created_at`,
         [email, hash]
     );
 
@@ -75,6 +75,7 @@ r.post("/login", async (req, res) => {
             email: user.email,
             role: user.role,
             full_name: user.full_name,
+            profile_photo: user.profile_photo,
             enterprise_id: user.enterprise_id, // ✅ key
         },
         process.env.JWT_SECRET,
@@ -88,6 +89,7 @@ r.post("/login", async (req, res) => {
             email: user.email,
             role: user.role,
             full_name: user.full_name,
+            profile_photo: user.profile_photo,
             enterprise_id: user.enterprise_id,
         },
     });
@@ -310,7 +312,7 @@ r.post("/reset-password", async (req, res) => {
 
 // optional: whoami
 r.get("/me", requireAuth, async (req, res) => {
-    const result = await query("SELECT id, email, role, full_name, enterprise_id FROM users WHERE id = $1", [req.user.id]);
+    const result = await query("SELECT id, email, role, full_name, profile_photo, enterprise_id FROM users WHERE id = $1", [req.user.id]);
     res.json({ user: result.rows[0] });
 });
 

@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../../auth/AuthContext";
 import { api } from "../../api/http";
-import PageHeader from "../../components/dashboard/PageHeader";
+import PageHeader from "../../components/landing/dashboard/PageHeader";
 import { Briefcase, Users, CalendarRange, Euro } from "lucide-react";
-import StatCard from "../../components/dashboard/StatCard";
-import RevenueChart from "../../components/dashboard/RevenueChart";
+import StatCard from "../../components/landing/dashboard/StatCard";
+import RevenueChart from "../../components/landing/dashboard/RevenueChart";
+import { useTheme } from "../../context/ThemeContext";
 
 export default function SuperAdminDashboard() {
     const { user } = useAuth();
+    const { darkMode } = useTheme();
     const [statsData, setStatsData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [period, setPeriod] = useState('monthly');
@@ -32,26 +34,33 @@ export default function SuperAdminDashboard() {
             label: "Enterprises", 
             value: statsData?.enterprises ?? "—", 
             icon: Briefcase,
-            gradient: "bg-gradient-to-br from-[#1c398e] to-[#2851c5]",
-            isDark: true
+            gradient: darkMode ? "bg-[#111827]" : "bg-white",
+            iconBg: darkMode ? "bg-blue-500/12" : "bg-[#DBEAFE]",
+            iconColor: "text-[#2563EB]"
         },
         { 
             label: "Users", 
             value: statsData?.users ?? "—", 
             icon: Users,
-            gradient: "bg-gradient-to-br from-purple-500/20 to-pink-500/20" 
+            gradient: darkMode ? "bg-[#111827]" : "bg-white",
+            iconBg: darkMode ? "bg-indigo-500/12" : "bg-[#E0E7FF]",
+            iconColor: "text-[#4F46E5]"
         },
         { 
             label: "Active Rentals", 
             value: statsData?.rentals ?? "—", 
             icon: CalendarRange,
-            gradient: "bg-gradient-to-br from-emerald-500/20 to-teal-500/20"
+            gradient: darkMode ? "bg-[#111827]" : "bg-white",
+            iconBg: darkMode ? "bg-cyan-500/12" : "bg-[#CCFBF1]",
+            iconColor: "text-[#0D9488]"
         },
         {
             label: "Revenue",
             value: `${statsData?.revenue ?? 0} MAD`,
             icon: Euro,
-            gradient: "bg-gradient-to-br from-amber-500/20 to-orange-500/20"
+            gradient: darkMode ? "bg-[#111827]" : "bg-white",
+            iconBg: darkMode ? "bg-emerald-500/12" : "bg-[#DCFCE7]",
+            iconColor: "text-[#16A34A]"
         },
     ];
 

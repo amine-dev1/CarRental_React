@@ -12,6 +12,7 @@ import rentalsRoutes from "./routes/rentals.js";
 import superadminRoutes from "./routes/superadmin.js";
 import companyRoutes from "./routes/company.js";
 import demoRoutes from "./routes/demo.js";
+import reclamationsRoutes from "./routes/reclamations.js";
 
 const app = express();
 
@@ -57,6 +58,7 @@ app.use("/api/company", companyRoutes);
 app.use("/api/customers", customersRoutes);
 app.use("/api/vehicles", vehiclesRoutes);
 app.use("/api/rentals", rentalsRoutes);
+app.use("/api/reclamations", reclamationsRoutes);
 app.use("/api/demo", demoRoutes);
 
 const port = process.env.PORT || 4000;

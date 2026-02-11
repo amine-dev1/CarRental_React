@@ -1,22 +1,26 @@
-export default function StatCard({ label, value, icon: Icon, gradient, isDark }) {
-    const textClass = isDark ? "text-white" : "text-gray-900";
-    const labelClass = isDark ? "text-white/80" : "text-gray-700/80";
-    const iconClass = isDark ? "bg-white/20 text-white border-white/20" : "bg-white/30 text-gray-900 border-white/40";
+import { useTheme } from "../../../context/ThemeContext";
+
+export default function StatCard({ label, value, icon: Icon, gradient, isDark, iconBg, iconColor }) {
+    const { darkMode } = useTheme();
+    const textClass = isDark || darkMode ? "text-[#F1F5F9]" : "text-gray-900";
+    const labelClass = isDark || darkMode ? "text-[#64748B]" : "text-gray-600 font-medium";
+    const iconClass = isDark || darkMode 
+        ? `${iconBg || 'bg-white/10'} ${iconColor || 'text-white'} border-transparent` 
+        : `${iconBg || 'bg-white/30'} ${iconColor || 'text-gray-900'} border-transparent`;
 
     return (
         <div
             className={`
                 group relative
-                rounded-3xl p-6
-                transition-all duration-300 ease-out
+                rounded-2xl p-8
+                transition-all duration-[250ms] ease-out
                 cursor-default
                 hover:-translate-y-1
                 overflow-hidden
-                ${gradient || 'bg-white/40'}
-                backdrop-blur-md
-                border border-white/20
-                shadow-[0_8px_32px_0_rgba(31,38,135,0.07)]
-                hover:shadow-[0_8px_32px_0_rgba(31,38,135,0.12)]
+                ${gradient || (darkMode ? 'bg-[#111827]' : 'bg-white')}
+                border border-gray-100/50 dark:border-white/5
+                shadow-[0_8px_24px_rgba(0,0,0,0.05)] dark:shadow-[0_8px_24px_rgba(0,0,0,0.4)]
+                hover:shadow-[0_12px_32px_rgba(0,0,0,0.08)] dark:hover:shadow-[0_12px_32px_rgba(0,0,0,0.5)]
             `}
         >
             {/* Glossy Overlay */}
@@ -27,7 +31,7 @@ export default function StatCard({ label, value, icon: Icon, gradient, isDark })
                 {Icon && (
                     <div
                         className={`
-                            mb-4 w-12 h-12 rounded-2xl flex items-center justify-center
+                            mb-4 w-12 h-12 rounded-xl flex items-center justify-center
                             backdrop-blur-sm border shadow-sm
                             transition-all duration-300
                             group-hover:scale-110

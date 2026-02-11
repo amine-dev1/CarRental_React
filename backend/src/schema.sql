@@ -23,6 +23,8 @@ CREATE TABLE IF NOT EXISTS users (
   enterprise_id uuid REFERENCES enterprises(id) ON DELETE RESTRICT,
   email text UNIQUE NOT NULL,
   phone text UNIQUE,
+  full_name text,
+  profile_photo text,
   password_hash text NOT NULL,
   role text NOT NULL CHECK (role IN ('superadmin','director','agent')),
   reset_token text,

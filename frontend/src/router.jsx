@@ -7,6 +7,7 @@ import ResetPassword from "./pages/auth/ResetPassword";
 import SuperAdminLayout from "./layouts/SuperAdminLayout";
 import SuperAdminDashboard from "./pages/superadmin/Dashboard";
 import Enterprises from "./pages/superadmin/Enterprises";
+import Reclamations from "./pages/superadmin/Reclamations";
 import DirectorDashboard from "./pages/director/DirectorDashboard";
 import Fleet from "./pages/director/Fleet";
 import Customers from "./pages/director/Customers";
@@ -35,6 +36,7 @@ export default function Router() {
                     >
                         <Route index element={<SuperAdminDashboard />} />
                         <Route path="enterprises" element={<Enterprises />} />
+                        <Route path="reclamations" element={<Reclamations />} />
                     </Route>
 
                     {/* Director Routes */}

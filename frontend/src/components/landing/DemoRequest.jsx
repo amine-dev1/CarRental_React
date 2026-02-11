@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Mail, MapPin, MessageSquare, Send } from 'lucide-react';
 import logo from "../../assets/logo-blue.png";
 import { api } from '../../api/http';
-import toast from 'react-hot-toast';
+import { showSuccess, showError } from '../CustomToasts';
 
 const DemoRequest = () => {
     const [loading, setLoading] = useState(false);
@@ -22,7 +22,7 @@ const DemoRequest = () => {
                 method: 'POST',
                 body: { ...formData, type: 'demo' }
             });
-            toast.success('Demande envoyée avec succès !');
+            showSuccess('Demande envoyée avec succès !');
             setFormData({
                 fullName: '',
                 company: '',
@@ -33,7 +33,7 @@ const DemoRequest = () => {
             e.target.reset();
         } catch (error) {
             console.error('Error submitting form:', error);
-            toast.error(error.message || "Une erreur est survenue lors de l'envoi");
+            showError(error.message || "Une erreur est survenue lors de l'envoi");
         } finally {
             setLoading(false);
         }

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import toast from "react-hot-toast";
+import { showError } from "../../components/CustomToasts";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth/AuthContext";
 import "../../pages/auth/login.css";
@@ -31,7 +31,7 @@ export default function Login() {
             else if (payload.role === "director") navigate("/director");
             else navigate("/agent");
         } catch (err) {
-            toast.error("Identifiants ou mot de passe incorrects");
+            showError("Identifiants ou mot de passe incorrects");
         } finally {
             setLoading(false);
         }

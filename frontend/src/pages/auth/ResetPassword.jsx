@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import toast from "react-hot-toast";
+import { showSuccess, showError } from "../../components/CustomToasts";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "../../api/http";
 import "../../pages/auth/login.css";
@@ -91,11 +91,11 @@ export default function ResetPassword() {
                 method: "POST",
                 body: payload,
             });
-            toast.success("Nouveau code envoyé !");
+            showSuccess("Nouveau code envoyé !");
             setCanResend(false);
             setCountdown(30);
         } catch (err) {
-            toast.error(err.message || "Erreur lors de l'envoi.");
+            showError(err.message || "Erreur lors de l'envoi.");
         } finally {
             setLoading(false);
         }
@@ -149,7 +149,7 @@ export default function ResetPassword() {
         } catch (err) {
             const message = err.message || "Une erreur est survenue.";
             setError(message);
-            toast.error(message);
+            showError(message);
         } finally {
             setLoading(false);
         }

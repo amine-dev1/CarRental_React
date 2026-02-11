@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { Calendar, MapPin, Search, TrendingUp, Users, Car, BarChart3, Loader2 } from 'lucide-react';
 import { scrollToSection } from '../../utils/scroll';
 import { api } from '../../api/http';
-import toast from 'react-hot-toast';
+import { showSuccess, showError } from '../CustomToasts';
 import heroBg from "../../assets/hero-bg.jpg";
+import heroCar from "../../assets/hero-car.jpg";
 
 const Hero = () => {
     const [loading, setLoading] = useState(false);
@@ -21,9 +22,7 @@ const Hero = () => {
                 method: 'POST',
                 body: { ...formData, type: 'trial' }
             });
-            toast.success('demande de essai gratuit est envoyée nous vous reponderons des que possible', {
-                duration: 5000,
-            });
+            showSuccess('demande de essai gratuit est envoyée nous vous reponderons des que possible');
             setFormData({
                 email: '',
                 companyName: '',
@@ -31,7 +30,7 @@ const Hero = () => {
             });
         } catch (error) {
             console.error('Error trial request:', error);
-            toast.error(error.message || "Une erreur est survenue lors de l'envoi");
+            showError(error.message || "Une erreur est survenue lors de l'envoi");
         } finally {
             setLoading(false);
         }
@@ -197,30 +196,48 @@ const Hero = () => {
                     </div>
 
                     {/* Right Content - Dashboard Preview */}
-                    <div className="hidden lg:block">
-                        <div className="relative">
-                            <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent rounded-3xl transform rotate-6 animate-tilt"></div>
-                            <div className="relative bg-white/10 backdrop-blur-sm rounded-3xl p-8 border border-white/20">
-                                <div className="aspect-video bg-gradient-to-br from-white/20 to-white/5 rounded-2xl flex items-center justify-center overflow-hidden">
-                                    {/* Dashboard Icon */}
-                                    <BarChart3 className="w-48 h-48 text-white/40 animate-pulse-slow" strokeWidth={1} />
+                    <div className="hidden lg:block relative z-10 w-full max-w-lg mx-auto transform hover:scale-[1.02] transition-all duration-500 hover:-translate-y-2">
+                            <div className="relative">
+                                {/* Glow effect behind */}
+                                <div className="absolute inset-0 bg-blue-500/20 rounded-3xl blur-3xl animate-pulse"></div>
+                                
+                                {/* Main Image Container */}
+                                <div className="relative rounded-3xl overflow-hidden border border-white/10 shadow-2xl bg-white/5">
+                                    <img 
+                                        src={heroCar} 
+                                        alt="Car Rental Dashboard Preview" 
+                                        className="relative w-full h-auto object-cover z-10"
+                                    />
+                                    {/* Subtle sheen */}
+                                    <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent pointer-events-none z-20"></div>
                                 </div>
-                                <div className="mt-6 space-y-3">
-                                    <div className="flex items-center justify-between">
-                                        <div className="h-4 bg-white/20 rounded-full w-2/3 animate-shimmer"></div>
-                                        <div className="h-4 bg-emerald-400/40 rounded-full w-16 animate-shimmer"></div>
+                                
+                                {/* Floating Stats - Revenue */}
+                                <div className="absolute -bottom-6 -right-6 bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/20 shadow-lg animate-float-slow z-30">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 bg-emerald-500/20 rounded-lg">
+                                            <TrendingUp className="text-emerald-400" size={20} />
+                                        </div>
+                                        <div>
+                                            <p className="text-xs text-blue-200">Revenus Mensuels</p>
+                                            <p className="text-lg font-bold text-white">+12,450€</p>
+                                        </div>
                                     </div>
-                                    <div className="flex items-center justify-between">
-                                        <div className="h-4 bg-white/20 rounded-full w-1/2 animate-shimmer-delay"></div>
-                                        <div className="h-4 bg-blue-400/40 rounded-full w-20 animate-shimmer-delay"></div>
-                                    </div>
-                                    <div className="flex items-center justify-between">
-                                        <div className="h-4 bg-white/20 rounded-full w-3/4 animate-shimmer"></div>
-                                        <div className="h-4 bg-purple-400/40 rounded-full w-12 animate-shimmer"></div>
+                                </div>
+
+                                {/* Floating Stats - Vehicles */}
+                                <div className="absolute -top-6 -left-6 bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/20 shadow-lg animate-float-slow-delay z-30">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 bg-blue-500/20 rounded-lg">
+                                            <Car className="text-blue-400" size={20} />
+                                        </div>
+                                        <div>
+                                            <p className="text-xs text-blue-200">Véhicules Actifs</p>
+                                            <p className="text-lg font-bold text-white">45/52</p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
                     </div>
                 </div>
             </div>

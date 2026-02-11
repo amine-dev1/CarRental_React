@@ -1,7 +1,7 @@
 import { Router } from "express";
 import bcrypt from "bcrypt";
 import { z } from "zod";
-import { query } from "../db.js";
+import { query, pool } from "../db.js";
 import { requireAuth } from "../middleware/auth.js";
 import { requireRole } from "../middleware/roles.js";
 
@@ -152,19 +152,65 @@ r.put("/enterprises/:id", async (req, res) => {
     res.json(result.rows[0]);
 });
 
-r.delete("/enterprises/:id", async (req, res) => {
+r.patch("/enterprises/:id/status", async (req, res) => {
     const { id } = req.params;
+    const { status } = req.body; // active, suspended
 
-    // Check if there are users linked to this enterprise
-    const users = await query("SELECT count(*) FROM users WHERE enterprise_id=$1", [id]);
-    if (parseInt(users.rows[0].count) > 0) {
-        return res.status(400).json({ error: "Impossible de supprimer une entreprise avec des utilisateurs actifs. Suspendez-la plutôt." });
+    if (!["active", "suspended"].includes(status)) {
+        return res.status(400).json({ error: "Invalid status" });
     }
 
-    const result = await query("DELETE FROM enterprises WHERE id=$1 RETURNING id", [id]);
-    if (!result.rows[0]) return res.status(404).json({ error: "Enterprise not found" });
+    const result = await query(
+        `UPDATE enterprises SET status=$1 WHERE id=$2 RETURNING *`,
+        [status, id]
+    );
 
-    res.json({ message: "Enterprise deleted", id: result.rows[0].id });
+    if (!result.rows[0]) return res.status(404).json({ error: "Enterprise not found" });
+    res.json(result.rows[0]);
+});
+
+r.delete("/enterprises/:id", async (req, res) => {
+    const { id } = req.params;
+    
+    const client = await pool.connect();
+    
+    try {
+        await client.query('BEGIN');
+
+        // Delete all related data in order because of foreign key constraints (ON DELETE RESTRICT)
+        // 1. Payments (link to rentals)
+        await client.query('DELETE FROM payments WHERE enterprise_id=$1', [id]);
+        
+        // 2. Rentals (link to customers, vehicles)
+        await client.query('DELETE FROM rentals WHERE enterprise_id=$1', [id]);
+        
+        // 3. Vehicles
+        await client.query('DELETE FROM vehicles WHERE enterprise_id=$1', [id]);
+        
+        // 4. Customers
+        await client.query('DELETE FROM customers WHERE enterprise_id=$1', [id]);
+        
+        // 5. Users
+        await client.query('DELETE FROM users WHERE enterprise_id=$1', [id]);
+        
+        // 6. Enterprise itself
+        const result = await client.query('DELETE FROM enterprises WHERE id=$1 RETURNING id', [id]);
+        
+        if (!result.rows[0]) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ error: "Enterprise not found" });
+        }
+
+        await client.query('COMMIT');
+        res.json({ message: "Enterprise and all related data deleted", id: result.rows[0].id });
+        
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error("Error deleting enterprise:", error);
+        res.status(500).json({ error: "Failed to delete enterprise" });
+    } finally {
+        client.release();
+    }
 });
 
 const CreateUserSchema = z.object({

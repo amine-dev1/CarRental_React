@@ -1,6 +1,22 @@
 @import "tailwindcss";
 
 @theme {
+  --color-primary: #2563EB;
+--color-primary-dark: #1D4ED8;
+
+--color-accent: #10B981;
+--color-accent-dark: #059669;
+
+--color-background: #F8FAFC;
+--color-surface: #FFFFFF;
+
+--color-border: #E5E7EB;
+
+--color-text-primary: #111827;
+--color-text-secondary: #6B7280;
+
+--color-footer: #0F172A;
+
   --color-deep-50: #eff6ff;
   --color-deep-100: #dbeafe;
   --color-deep-200: #bfdbfe;
@@ -19,19 +35,26 @@
   --color-warning: #F59E0B;
   --color-error: #EF4444;
 
-  --color-background: #F8FAFC;
-  --color-background-sidebar: #f8fafc;
+  --color-background-sidebar: #1e293b;
 
   --color-surface: #FFFFFF;
   --color-border: #E5E7EB;
-
   --color-text-primary: #111827;
   --color-text-secondary: #6B7280;
-  --color-text-muted: #9CA3AF;
+  --color-text-muted: #94A3B8;
   --color-text-ondark: #E5E7EB;
 }
 
 @layer base {
+  .dark {
+    --color-background: #0F172A;
+    --color-surface: #111827;
+    --color-border: rgba(255, 255, 255, 0.05);
+    --color-text-primary: #F1F5F9;
+    --color-text-secondary: #94A3B8;
+    --color-background-sidebar: #0B1220;
+    --color-text-muted: #64748B;
+  }
 
   button,
   select,
@@ -44,5 +67,43 @@
   select:disabled,
   [disabled] {
     cursor: not-allowed;
+  }
+
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+  }
+
+  .dark ::-webkit-scrollbar-thumb {
+    background: #334155;
+  }
+
+  .dark ::-webkit-scrollbar-thumb:hover {
+    background: #475569;
+  }
+
+  .btn-premium-gradient {
+    background-image: linear-gradient(to right, #4a74a5, #3a5c8c);
+    transition: all 0.3s ease;
+  }
+
+  .btn-premium-gradient:hover {
+    background-image: linear-gradient(to right, #3a5c8c, #2d4a73);
+    transform: translateY(-1px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
   }
 }
