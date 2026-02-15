@@ -31,7 +31,7 @@ export default function SuperAdminDashboard() {
 
     const stats = [
         { 
-            label: "Enterprises", 
+            label: "Entreprises", 
             value: statsData?.enterprises ?? "—", 
             icon: Briefcase,
             gradient: darkMode ? "bg-[#111827]" : "bg-white",
@@ -39,7 +39,7 @@ export default function SuperAdminDashboard() {
             iconColor: "text-[#2563EB]"
         },
         { 
-            label: "Users", 
+            label: "Utilisateurs", 
             value: statsData?.users ?? "—", 
             icon: Users,
             gradient: darkMode ? "bg-[#111827]" : "bg-white",
@@ -47,15 +47,15 @@ export default function SuperAdminDashboard() {
             iconColor: "text-[#4F46E5]"
         },
         { 
-            label: "Active Rentals", 
-            value: statsData?.rentals ?? "—", 
+            label: "Abonnements Actifs", 
+            value: statsData?.activeSubscriptions ?? "—", 
             icon: CalendarRange,
             gradient: darkMode ? "bg-[#111827]" : "bg-white",
             iconBg: darkMode ? "bg-cyan-500/12" : "bg-[#CCFBF1]",
             iconColor: "text-[#0D9488]"
         },
         {
-            label: "Revenue",
+            label: "Revenus",
             value: `${statsData?.revenue ?? 0} MAD`,
             icon: Euro,
             gradient: darkMode ? "bg-[#111827]" : "bg-white",

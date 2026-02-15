@@ -1,0 +1,15 @@
+📋 Comptes de Test Créés
+🆓 Plan FREE
+Email: free@director.com
+Mot de passe: password123
+Limites: 5 véhicules max, 2 utilisateurs max
+Dashboard: Features bloquées avec CTAs d'upgrade
+⭐ Plan PRO
+Email: pro@director.com
+Mot de passe: password123
+Limites: 50 véhicules max, 10 utilisateurs max
+Dashboard: Analytics complètes, graphiques, calendrier
+👑 Plan ENTERPRISE
+Email: enterprise@director.com
+Mot de passe: password123
+Limites: Véhicules et utilisateurs illimités

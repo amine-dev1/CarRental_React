@@ -1,13 +1,13 @@
-import { query } from "./db.js";
+import { query } from "../src/db.js";
 
 (async () => {
     try {
         const res = await query(`
             SELECT column_name, data_type 
             FROM information_schema.columns 
-            WHERE table_name = 'users'
+            WHERE table_name = 'customers'
         `);
-        console.log("Columns in 'users' table:");
+        console.log("Columns in 'customers' table:");
         res.rows.forEach(row => console.log(`- ${row.column_name} (${row.data_type})`));
         process.exit(0);
     } catch (err) {

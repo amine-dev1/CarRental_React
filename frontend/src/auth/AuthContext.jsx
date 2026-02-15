@@ -20,18 +20,23 @@ export function AuthProvider({ children }) {
     }
 
     async function login(email, password) {
-        // ✅ Corrected: uses /api/auth/login matching backend route
-        const res = await api("/api/auth/login", {
-            method: "POST",
-            body: { email, password }
-        });
+        try {
+            // ✅ Corrected: uses /api/auth/login matching backend route
+            const res = await api("/api/auth/login", {
+                method: "POST",
+                body: { email, password }
+            });
 
-        localStorage.setItem("token", res.token);
-        // Note: login response already returns user object (res.user), could optimize by setting it directly
-        // but loadMe() is safer to verify token immediately.
-        setUser(res.user); // Opti: Set user directly from login response which includes it
-        setLoading(false);
-        // await loadMe(); // Removed extra call since login returns user
+            localStorage.setItem("token", res.token);
+            // Note: login response already returns user object (res.user), could optimize by setting it directly
+            // but loadMe() is safer to verify token immediately.
+            setUser(res.user); // Opti: Set user directly from login response which includes it
+            setLoading(false);
+            // await loadMe(); // Removed extra call since login returns user
+        } catch (error) {
+            // Re-throw the error so the calling component can handle it
+            throw error;
+        }
     }
 
     function logout() {

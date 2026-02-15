@@ -138,7 +138,14 @@ r.get("/dashboard", async (req, res) => {
             percentage: totalPaymentAmount ? Math.round((parseFloat(row.amount) / totalPaymentAmount) * 100) : 0
         }));
 
+        // Get enterprise info
+        const enterpriseRes = await query(
+            `SELECT id, name, plan, status, max_vehicles, max_users FROM enterprises WHERE id=$1`,
+            [eid]
+        );
+
         res.json({
+            enterprise: enterpriseRes.rows[0],
             stats: {
                 revenue: { current: revenue, previous: 0, change: 0 }, // Mock previous/change for now
                 activeRentals: { current: activeRentals, previous: 0, change: 0 },

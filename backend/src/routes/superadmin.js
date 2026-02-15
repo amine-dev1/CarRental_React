@@ -14,7 +14,7 @@ r.get("/stats", async (req, res) => {
     
     const enterprises = await query("SELECT count(*) FROM enterprises");
     const users = await query("SELECT count(*) FROM users");
-    const rentals = await query("SELECT count(*) FROM rentals WHERE status != 'canceled'");
+    const activeSubscriptions = await query("SELECT count(*) FROM enterprises WHERE status = 'active' AND plan IN ('Pro', 'Enterprise')");
     
     // Total Revenue (all time cents)
     const revTotal = await query("SELECT COALESCE(SUM(amount_cents), 0) as total FROM payments");
@@ -61,7 +61,7 @@ r.get("/stats", async (req, res) => {
     res.json({
         enterprises: parseInt(enterprises.rows[0].count),
         users: parseInt(users.rows[0].count),
-        rentals: parseInt(rentals.rows[0].count),
+        activeSubscriptions: parseInt(activeSubscriptions.rows[0].count),
         revenue: parseInt(revTotal.rows[0].total) / 100,
         chartData: revChart.rows.map(row => ({
             label: row.label,

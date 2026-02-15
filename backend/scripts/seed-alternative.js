@@ -1,5 +1,5 @@
 import bcrypt from "bcrypt";
-import { query } from "./db.js";
+import { query } from "../src/db.js";
 
 const TEST_PASSWORD = "password123";
 

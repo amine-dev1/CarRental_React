@@ -31,7 +31,9 @@ export default function Login() {
             else if (payload.role === "director") navigate("/director");
             else navigate("/agent");
         } catch (err) {
-            showError("Identifiants ou mot de passe incorrects");
+            // Afficher le message d'erreur du backend (ex: entreprise suspendue)
+            const errorMessage = err.response?.data?.error || "Identifiants ou mot de passe incorrects";
+            showError(errorMessage);
         } finally {
             setLoading(false);
         }

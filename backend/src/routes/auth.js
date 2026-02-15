@@ -63,7 +63,9 @@ r.post("/login", async (req, res) => {
 
     // Block if enterprise is suspended (superadmins are exempt as they have enterprise_id NULL)
     if (user.role !== 'superadmin' && user.enterprise_status === 'suspended') {
-        return res.status(403).json({ error: "Votre compte est suspendu. Veuillez contacter l'administrateur." });
+        return res.status(403).json({ 
+            error: "Votre entreprise a été suspendue. Veuillez contacter l'administrateur du site pour plus d'informations." 
+        });
     }
 
     const ok = await bcrypt.compare(password, user.password_hash);
