@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { useTheme } from "../../context/ThemeContext";
 import { useAuth } from "../../auth/AuthContext";
+import CustomSelect from "../../components/common/CustomSelect";
 
 function StatusBadge({ status = "active" }) {
     const s = String(status).toLowerCase();
@@ -89,7 +90,7 @@ export default function Enterprises() {
     const [form, setForm] = useState({
         name: "",
         address: "",
-        plan: "Free",
+        plan: "Standard",
         status: "active",
     });
 
@@ -97,7 +98,7 @@ export default function Enterprises() {
     const [expandedId, setExpandedId] = useState(null);
     const [usersMap, setUsersMap] = useState({});
     const [usersLoadingId, setUsersLoadingId] = useState(null);
-    
+
     // Action Menu State
     const [activeMenu, setActiveMenu] = useState(null);
     const [deleteConfirm, setDeleteConfirm] = useState(null);
@@ -146,14 +147,14 @@ export default function Enterprises() {
             });
 
             setEnterprises((prev) => [created, ...prev]);
-            setForm({ name: "", address: "", plan: "Free", status: "active" });
+            setForm({ name: "", address: "", plan: "Standard", status: "active" });
             setShowCreate(false);
-            
+
             showSuccess("L'entreprise a été créée avec succès.");
 
         } catch (e2) {
             setError(e2.message || "Erreur création");
-            
+
             showError("Une erreur est survenue lors de la création.");
 
         } finally {
@@ -200,7 +201,7 @@ export default function Enterprises() {
     const confirmStatusUpdate = async () => {
         if (!statusConfirm) return;
         const enterprise = statusConfirm;
-        
+
         try {
             setProcessing(enterprise.id);
             const newStatus = enterprise.status === 'active' ? 'suspended' : 'active';
@@ -208,13 +209,13 @@ export default function Enterprises() {
                 method: 'PATCH',
                 body: { status: newStatus }
             });
-            
-            setEnterprises(prev => prev.map(e => 
+
+            setEnterprises(prev => prev.map(e =>
                 e.id === enterprise.id ? { ...e, status: newStatus } : e
             ));
-            
+
             showInfo(`L'entreprise est maintenant ${newStatus === 'active' ? 'active' : 'suspendue'}.`);
-            
+
             setStatusConfirm(null);
         } catch (error) {
             console.error("Error updating status:", error);
@@ -231,17 +232,17 @@ export default function Enterprises() {
 
     const confirmDelete = async () => {
         if (!deleteConfirm) return;
-        
+
         try {
             setProcessing(deleteConfirm.id);
             await api(`/api/superadmin/enterprises/${deleteConfirm.id}`, {
                 method: 'DELETE'
             });
-            
+
             setEnterprises(prev => prev.filter(e => e.id !== deleteConfirm.id));
-            
+
             showSuccess("Entreprise supprimée avec succès !");
-            
+
             setDeleteConfirm(null);
         } catch (error) {
             console.error("Error deleting enterprise:", error);
@@ -267,7 +268,7 @@ export default function Enterprises() {
                 <div className="hidden md:flex items-center gap-3 text-xs">
                     <div className={`flex items-center gap-2 px-4 py-2 rounded-xl border shadow-sm ${darkMode ? 'bg-[#111827] border-white/5' : 'bg-white border-[#E2E8F0]'}`}>
                         <Building2 size={16} className="text-[#4A7BDE]" />
-                        <span className={`font-bold ${darkMode ? 'text-[#F1F5F9]' : 'text-[#0F172A]'}`}>{filtered.length}</span> 
+                        <span className={`font-bold ${darkMode ? 'text-[#F1F5F9]' : 'text-[#0F172A]'}`}>{filtered.length}</span>
                         <span className={`font-semibold uppercase tracking-wider text-[10px] ${darkMode ? 'text-[#94A3B8]' : 'text-[#64748B]'}`}>Entreprises</span>
                     </div>
                 </div>
@@ -283,18 +284,16 @@ export default function Enterprises() {
                             placeholder="Rechercher une entreprise..."
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
-                            className={`w-full pl-10 pr-4 py-2.5 rounded-xl border text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7BDE]/20 focus:border-[#4A7BDE] transition-all placeholder:text-[#94A3B8] ${
-                                darkMode ? 'bg-white/5 border-white/10 text-[#F1F5F9]' : 'bg-white border-[#E2E8F0] text-[#0F172A]'
-                            }`}
+                            className={`w-full pl-10 pr-4 py-2.5 rounded-xl border text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7BDE]/20 focus:border-[#4A7BDE] transition-all placeholder:text-[#94A3B8] ${darkMode ? 'bg-white/5 border-white/10 text-[#F1F5F9]' : 'bg-white border-[#E2E8F0] text-[#0F172A]'
+                                }`}
                         />
                     </div>
                     <button
                         onClick={loadEnterprises}
-                        className={`group flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all border ${
-                            darkMode 
-                            ? 'text-[#94A3B8] border-white/5 hover:bg-white/5 hover:text-[#F1F5F9]' 
-                            : 'text-[#475569] border-[#E2E8F0] hover:bg-[#F8FAFC] hover:border-[#94A3B8]'
-                        }`}
+                        className={`group flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all border ${darkMode
+                                ? 'text-[#94A3B8] border-white/5 hover:bg-white/5 hover:text-[#F1F5F9]'
+                                : 'text-[#475569] border-[#E2E8F0] hover:bg-[#F8FAFC] hover:border-[#94A3B8]'
+                            }`}
                     >
                         <RefreshCw size={16} className={`${darkMode ? 'text-[#94A3B8]' : 'text-[#64748B]'} group-hover:rotate-180 transition-transform duration-500`} />
                         <span className="hidden sm:inline">Rafraîchir</span>
@@ -320,7 +319,7 @@ export default function Enterprises() {
             {/* Create Modal */}
             {showCreate && createPortal(
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fadeIn">
-                    <div 
+                    <div
                         className={`
                             relative w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden animate-scaleUp
                             ${darkMode ? 'bg-[#0F172A] border border-[#1E293B]' : 'bg-white'}
@@ -332,7 +331,7 @@ export default function Enterprises() {
                             <h3 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-slate-800'}`}>
                                 Nouvelle entreprise
                             </h3>
-                            <button 
+                            <button
                                 onClick={() => setShowCreate(false)}
                                 className={`p-2 rounded-full transition-colors ${darkMode ? 'hover:bg-white/10 text-gray-400' : 'hover:bg-slate-100 text-slate-400'}`}
                             >
@@ -356,8 +355,8 @@ export default function Enterprises() {
                                             className={`
                                                 w-full px-4 py-3.5 rounded-xl border text-[15px] transition-all outline-none
                                                 placeholder-[#9CA3AF] text-[#0F172A]
-                                                ${darkMode 
-                                                    ? 'bg-[#1E293B] border-[#334155] focus:border-[#3B82F6] hover:border-[#475569] text-white' 
+                                                ${darkMode
+                                                    ? 'bg-[#1E293B] border-[#334155] focus:border-[#3B82F6] hover:border-[#475569] text-white'
                                                     : 'bg-white border-[#E2E8F0] focus:border-[#10B981] hover:border-[#CBD5E1] focus:ring-[3px] focus:ring-[#10B981]/10'
                                                 }
                                                 ${form.name ? (darkMode ? 'border-[#3B82F6]' : 'border-[#10B981]') : ''}
@@ -380,8 +379,8 @@ export default function Enterprises() {
                                             className={`
                                                 w-full px-4 py-3.5 rounded-xl border text-[15px] transition-all outline-none
                                                 placeholder-[#9CA3AF] text-[#0F172A]
-                                                ${darkMode 
-                                                    ? 'bg-[#1E293B] border-[#334155] focus:border-[#3B82F6] hover:border-[#475569] text-white' 
+                                                ${darkMode
+                                                    ? 'bg-[#1E293B] border-[#334155] focus:border-[#3B82F6] hover:border-[#475569] text-white'
                                                     : 'bg-white border-[#E2E8F0] focus:border-[#3B82F6] hover:border-[#CBD5E1] focus:ring-[3px] focus:ring-blue-500/10'
                                                 }
                                             `}
@@ -393,25 +392,16 @@ export default function Enterprises() {
                                         <label className="flex text-[13px] font-semibold text-[#94A3B8] uppercase tracking-wide">
                                             Plan <span className="text-[#EF4444] ml-1">*</span>
                                         </label>
-                                        <div className="relative">
-                                            <select
-                                                className={`
-                                                    w-full px-4 py-3.5 rounded-xl border text-[15px] transition-all outline-none appearance-none cursor-pointer
-                                                    text-[#0F172A]
-                                                    ${darkMode 
-                                                        ? 'bg-[#1E293B] border-[#334155] focus:border-[#3B82F6] hover:border-[#475569] text-white' 
-                                                        : 'bg-white border-[#E2E8F0] focus:border-[#3B82F6] hover:border-[#CBD5E1] hover:bg-[#F9FAFB] focus:ring-[3px] focus:ring-blue-500/10'
-                                                    }
-                                                `}
+                                            <CustomSelect
                                                 value={form.plan}
-                                                onChange={(e) => setForm((p) => ({ ...p, plan: e.target.value }))}
-                                            >
-                                                <option value="Free">Free</option>
-                                                <option value="Pro">Pro</option>
-                                                <option value="Enterprise">Enterprise</option>
-                                            </select>
-                                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-[#94A3B8] pointer-events-none" size={16} />
-                                        </div>
+                                                onChange={(val) => setForm((p) => ({ ...p, plan: val }))}
+                                                variant="form"
+                                                options={[
+                                                    { value: "Standard", label: "Standard" },
+                                                    { value: "Pro", label: "Pro" },
+                                                    { value: "Enterprise", label: "Enterprise" }
+                                                ]}
+                                            />
                                     </div>
 
                                     {/* Status Select */}
@@ -419,24 +409,15 @@ export default function Enterprises() {
                                         <label className="flex text-[13px] font-semibold text-[#94A3B8] uppercase tracking-wide">
                                             Statut <span className="text-[#EF4444] ml-1">*</span>
                                         </label>
-                                        <div className="relative">
-                                            <select
-                                                className={`
-                                                    w-full px-4 py-3.5 rounded-xl border text-[15px] transition-all outline-none appearance-none cursor-pointer
-                                                    text-[#0F172A]
-                                                    ${darkMode 
-                                                        ? 'bg-[#1E293B] border-[#334155] focus:border-[#3B82F6] hover:border-[#475569] text-white' 
-                                                        : 'bg-white border-[#E2E8F0] focus:border-[#3B82F6] hover:border-[#CBD5E1] hover:bg-[#F9FAFB] focus:ring-[3px] focus:ring-blue-500/10'
-                                                    }
-                                                `}
+                                            <CustomSelect
                                                 value={form.status}
-                                                onChange={(e) => setForm((p) => ({ ...p, status: e.target.value }))}
-                                            >
-                                                <option value="active">Actif</option>
-                                                <option value="suspended">Suspendu</option>
-                                            </select>
-                                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-[#94A3B8] pointer-events-none" size={16} />
-                                        </div>
+                                                onChange={(val) => setForm((p) => ({ ...p, status: val }))}
+                                                variant="form"
+                                                options={[
+                                                    { value: "active", label: "Actif" },
+                                                    { value: "suspended", label: "Suspendu" }
+                                                ]}
+                                            />
                                     </div>
                                 </div>
                             </div>
@@ -448,8 +429,8 @@ export default function Enterprises() {
                                     onClick={() => setShowCreate(false)}
                                     className={`
                                         px-6 py-3 rounded-xl text-[15px] font-medium transition-all border
-                                        ${darkMode 
-                                            ? 'border-[#334155] text-[#94A3B8] hover:bg-[#1E293B] hover:text-white hover:border-[#475569]' 
+                                        ${darkMode
+                                            ? 'border-[#334155] text-[#94A3B8] hover:bg-[#1E293B] hover:text-white hover:border-[#475569]'
                                             : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-800 hover:border-slate-300'
                                         }
                                     `}
@@ -462,8 +443,8 @@ export default function Enterprises() {
                                     className={`
                                         px-8 py-3 rounded-xl text-[15px] font-bold text-white shadow-lg transition-all 
                                         flex items-center gap-2
-                                        ${creating || !form.name 
-                                            ? 'bg-blue-400 opacity-50 cursor-not-allowed' 
+                                        ${creating || !form.name
+                                            ? 'bg-blue-400 opacity-50 cursor-not-allowed'
                                             : 'bg-[#3B82F6] hover:bg-[#2563EB] hover:-translate-y-[1px] shadow-blue-500/30'
                                         }
                                     `}
@@ -523,8 +504,8 @@ export default function Enterprises() {
                                     `}
                                 >
                                     {/* Left Border colored by Plan */}
-                                    <div 
-                                        className="absolute left-0 top-0 bottom-0 w-1 transition-all duration-300 group-hover:w-1.5" 
+                                    <div
+                                        className="absolute left-0 top-0 bottom-0 w-1 transition-all duration-300 group-hover:w-1.5"
                                         style={{ backgroundColor: borderColor }}
                                     />
 
@@ -590,8 +571,8 @@ export default function Enterprises() {
                                                     flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all border
                                                     ${isExpanded
                                                         ? (darkMode ? 'bg-white text-slate-900 border-white' : 'bg-slate-800 text-white border-slate-800 shadow-md')
-                                                        : (darkMode 
-                                                            ? 'border-white/10 text-gray-400 hover:bg-white/5 hover:text-white hover:border-white/20' 
+                                                        : (darkMode
+                                                            ? 'border-white/10 text-gray-400 hover:bg-white/5 hover:text-white hover:border-white/20'
                                                             : 'border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-700 hover:border-slate-300')
                                                     }
                                                 `}
@@ -606,25 +587,22 @@ export default function Enterprises() {
                                                         e.stopPropagation();
                                                         setActiveMenu(activeMenu === ent.id ? null : ent.id);
                                                     }}
-                                                    className={`p-2 rounded-lg transition-all ${
-                                                        activeMenu === ent.id 
-                                                            ? (darkMode ? 'bg-white/10 text-white' : 'bg-slate-100 text-slate-900') 
+                                                    className={`p-2 rounded-lg transition-all ${activeMenu === ent.id
+                                                            ? (darkMode ? 'bg-white/10 text-white' : 'bg-slate-100 text-slate-900')
                                                             : (darkMode ? 'text-gray-400 hover:text-white hover:bg-white/5' : 'text-slate-400 hover:text-slate-700 hover:bg-slate-50')
-                                                    }`}
+                                                        }`}
                                                 >
                                                     <MoreVertical size={18} />
                                                 </button>
 
                                                 {/* Dropdown Menu */}
                                                 {activeMenu === ent.id && (
-                                                    <div 
-                                                        className={`absolute right-0 w-48 rounded-xl shadow-xl border z-[60] overflow-hidden ${
-                                                            idx >= filtered.length - 2 
-                                                                ? 'bottom-full mb-2 origin-bottom-right' 
+                                                    <div
+                                                        className={`absolute right-0 w-48 rounded-xl shadow-xl border z-[60] overflow-hidden ${idx >= filtered.length - 2
+                                                                ? 'bottom-full mb-2 origin-bottom-right'
                                                                 : 'mt-2 origin-top-right'
-                                                            } ${
-                                                            darkMode ? 'bg-[#1E293B] border-[#334155]' : 'bg-white border-slate-100'
-                                                        }`}
+                                                            } ${darkMode ? 'bg-[#1E293B] border-[#334155]' : 'bg-white border-slate-100'
+                                                            }`}
                                                         onClick={(e) => e.stopPropagation()}
                                                     >
                                                         <button
@@ -633,11 +611,10 @@ export default function Enterprises() {
                                                                 e.stopPropagation();
                                                                 handleStatusClick(ent);
                                                             }}
-                                                            className={`w-full text-left px-4 py-3 text-sm font-medium flex items-center gap-3 transition-colors cursor-pointer ${
-                                                                ent.status === 'active'
+                                                            className={`w-full text-left px-4 py-3 text-sm font-medium flex items-center gap-3 transition-colors cursor-pointer ${ent.status === 'active'
                                                                     ? ('text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/10')
                                                                     : ('text-green-500 hover:bg-green-50 dark:hover:bg-green-900/10')
-                                                            }`}
+                                                                }`}
                                                         >
                                                             <Power size={16} />
                                                             {ent.status === 'active' ? 'Suspendre' : 'Activer'}
@@ -661,28 +638,28 @@ export default function Enterprises() {
 
                                     {/* Expanded Team Section */}
                                     {isExpanded && (
-                                                <div className={`px-6 pb-6 animate-slideDown ${darkMode ? 'bg-[#0B1220]' : 'bg-[#F8FAFC]'}`}>
-                                                    <div className={`rounded-xl p-6 border mt-2 shadow-sm ${darkMode ? 'bg-[#111827] border-white/5' : 'bg-white border-[#E2E8F0]'}`}>
-                                                        <ExpandedContent
-                                                            loading={usersLoadingId === ent.id}
-                                                            director={director}
-                                                            agents={agents}
-                                                            darkMode={darkMode}
-                                                        />
-                                                    </div>
-                                                </div>
-                                            )}
+                                        <div className={`px-6 pb-6 animate-slideDown ${darkMode ? 'bg-[#0B1220]' : 'bg-[#F8FAFC]'}`}>
+                                            <div className={`rounded-xl p-6 border mt-2 shadow-sm ${darkMode ? 'bg-[#111827] border-white/5' : 'bg-white border-[#E2E8F0]'}`}>
+                                                <ExpandedContent
+                                                    loading={usersLoadingId === ent.id}
+                                                    director={director}
+                                                    agents={agents}
+                                                    darkMode={darkMode}
+                                                />
+                                            </div>
                                         </div>
-                                    );
-                                })}
-                            </div>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
                 )}
             </div>
 
             {/* Delete Confirmation Modal */}
             {deleteConfirm && createPortal(
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fadeIn">
-                    <div 
+                    <div
                         className={`
                             w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-scaleUp
                             ${darkMode ? 'bg-[#1E293B] border border-[#334155]' : 'bg-white'}
@@ -703,10 +680,10 @@ export default function Enterprises() {
                                     </p>
                                 </div>
                             </div>
-                            
+
                             <p className={`text-sm mb-6 ${darkMode ? 'text-gray-300' : 'text-slate-600'}`}>
-                                Êtes-vous sûr de vouloir supprimer <strong>{deleteConfirm.name}</strong> ? 
-                                <br/><br/>
+                                Êtes-vous sûr de vouloir supprimer <strong>{deleteConfirm.name}</strong> ?
+                                <br /><br />
                                 L'entreprise ainsi que tous les comptes associés (directeurs, agents) et leurs données seront définitivement supprimés.
                             </p>
 
@@ -715,8 +692,8 @@ export default function Enterprises() {
                                     onClick={() => setDeleteConfirm(null)}
                                     className={`
                                         px-4 py-2.5 rounded-xl text-sm font-medium transition-all border
-                                        ${darkMode 
-                                            ? 'border-[#334155] text-gray-300 hover:bg-white/5' 
+                                        ${darkMode
+                                            ? 'border-[#334155] text-gray-300 hover:bg-white/5'
                                             : 'border-slate-200 text-slate-600 hover:bg-slate-50'
                                         }
                                     `}
@@ -745,7 +722,7 @@ export default function Enterprises() {
             {/* Status Confirmation Modal */}
             {statusConfirm && createPortal(
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fadeIn">
-                    <div 
+                    <div
                         className={`
                             w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-scaleUp
                             ${darkMode ? 'bg-[#1E293B] border border-[#334155]' : 'bg-white'}
@@ -754,11 +731,10 @@ export default function Enterprises() {
                     >
                         <div className="p-6">
                             <div className="flex items-center gap-4 mb-4">
-                                <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 ${
-                                    statusConfirm.status === 'active' 
-                                        ? 'bg-orange-100 text-orange-600' 
+                                <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 ${statusConfirm.status === 'active'
+                                        ? 'bg-orange-100 text-orange-600'
                                         : 'bg-green-100 text-green-600'
-                                }`}>
+                                    }`}>
                                     <Power size={24} />
                                 </div>
                                 <div>
@@ -770,18 +746,18 @@ export default function Enterprises() {
                                     </p>
                                 </div>
                             </div>
-                            
+
                             <p className={`text-sm mb-6 ${darkMode ? 'text-gray-300' : 'text-slate-600'}`}>
                                 {statusConfirm.status === 'active' ? (
                                     <>
                                         Êtes-vous sûr de vouloir suspendre <strong>{statusConfirm.name}</strong> ?
-                                        <br/><br/>
+                                        <br /><br />
                                         Les comptes directeurs et agents associés ne pourront plus accéder au système tant que l'entreprise est suspendue.
                                     </>
                                 ) : (
                                     <>
                                         Êtes-vous sûr de vouloir réactiver <strong>{statusConfirm.name}</strong> ?
-                                        <br/><br/>
+                                        <br /><br />
                                         L'accès au système sera rétabli pour tous les comptes associés.
                                     </>
                                 )}
@@ -792,8 +768,8 @@ export default function Enterprises() {
                                     onClick={() => setStatusConfirm(null)}
                                     className={`
                                         px-4 py-2.5 rounded-xl text-sm font-medium transition-all border
-                                        ${darkMode 
-                                            ? 'border-[#334155] text-gray-300 hover:bg-white/5' 
+                                        ${darkMode
+                                            ? 'border-[#334155] text-gray-300 hover:bg-white/5'
                                             : 'border-slate-200 text-slate-600 hover:bg-slate-50'
                                         }
                                     `}
@@ -805,8 +781,8 @@ export default function Enterprises() {
                                     disabled={processing === statusConfirm.id}
                                     className={`
                                         px-4 py-2.5 rounded-xl text-sm font-bold text-white shadow-lg transition-all flex items-center gap-2
-                                        ${statusConfirm.status === 'active' 
-                                            ? 'bg-orange-500 hover:bg-orange-600 shadow-orange-500/20' 
+                                        ${statusConfirm.status === 'active'
+                                            ? 'bg-orange-500 hover:bg-orange-600 shadow-orange-500/20'
                                             : 'bg-green-500 hover:bg-green-600 shadow-green-500/20'
                                         }
                                     `}

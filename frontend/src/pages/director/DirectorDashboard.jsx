@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../../api/http';
-import DashboardFree from './DashboardFree';
+import DashboardStandard from './DashboardStandard';
 import DashboardPro from './DashboardPro';
 import DashboardEnterprise from './DashboardEnterprise';
 
@@ -13,10 +13,10 @@ export default function DirectorDashboard() {
             try {
                 const data = await api('/api/company/dashboard');
                 // Assuming the API returns enterprise info including plan
-                setEnterprisePlan(data.enterprise?.plan || 'Free');
+                setEnterprisePlan(data.enterprise?.plan || 'Standard');
             } catch (err) {
                 console.error("Failed to fetch enterprise plan:", err);
-                setEnterprisePlan('Free'); // Default to Free on error
+                setEnterprisePlan('Standard'); // Default to Standard on error
             } finally {
                 setLoading(false);
             }
@@ -38,8 +38,8 @@ export default function DirectorDashboard() {
             return <DashboardEnterprise />;
         case 'Pro':
             return <DashboardPro />;
-        case 'Free':
+        case 'Standard':
         default:
-            return <DashboardFree />;
+            return <DashboardStandard />;
     }
 }

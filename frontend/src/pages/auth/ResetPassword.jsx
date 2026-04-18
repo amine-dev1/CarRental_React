@@ -1,7 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { showSuccess, showError } from "../../components/CustomToasts";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "../../api/http";
+import { useTheme } from "../../context/ThemeContext";
+import { Sun, Moon } from "lucide-react";
+import PhoneInput from "../../components/PhoneInput";
 import "../../pages/auth/login.css";
 
 import logo from "../../assets/logo-blue.png";
@@ -10,25 +13,24 @@ import video from "../../assets/video.mp4";
 export default function ResetPassword() {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
+    const { darkMode, toggleDarkMode } = useTheme();
 
     const [email, setEmail] = useState("");
     const [phone, setPhone] = useState("");
-    const [method, setMethod] = useState("email"); // 'email' | 'sms'
+    const [method, setMethod] = useState("email");
     const [code, setCode] = useState("");
-    const [linkToken, setLinkToken] = useState(""); // Token du lien
+    const [linkToken, setLinkToken] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
 
     const [loading, setLoading] = useState(false);
-    const [step, setStep] = useState(1); // 1: Email/Phone, 2: Code, 3: Password
+    const [step, setStep] = useState(1);
     const [success, setSuccess] = useState(false);
     const [error, setError] = useState("");
     const [tokenVerifying, setTokenVerifying] = useState(false);
 
-    // Country Code state
-    const [countries, setCountries] = useState([]);
-    const [selectedCountry, setSelectedCountry] = useState({ code: "+212", cca2: "MA", flag: "🇲🇦" });
-    const [loadingCountries, setLoadingCountries] = useState(false);
+    // Country from PhoneInput
+    const selectedCountryRef = useRef({ code: "+212", cca2: "MA" });
 
     // Resend Code Logic
     const [canResend, setCanResend] = useState(false);
@@ -46,38 +48,9 @@ export default function ResetPassword() {
         return () => clearInterval(timer);
     }, [step, canResend, countdown]);
 
-    // Fetch countries
-    useEffect(() => {
-        async function fetchCountries() {
-            setLoadingCountries(true);
-            try {
-                const res = await fetch("https://restcountries.com/v3.1/all?fields=name,cca2,idd,flags");
-                const data = await res.json();
-
-                const formatted = data
-                    .filter(c => c.idd?.root && (c.idd.suffixes?.length > 0 || c.idd.suffixes === undefined))
-                    .map(c => ({
-                        name: c.name.common,
-                        cca2: c.cca2,
-                        // Fix for root+suffix combination
-                        code: c.idd.root + (c.idd.suffixes ? c.idd.suffixes[0] : ""),
-                        flag: c.flags.svg
-                    }))
-                    .sort((a, b) => a.name.localeCompare(b.name));
-
-                setCountries(formatted);
-
-                // Try to find Morocco
-                const morocco = formatted.find(c => c.cca2 === "MA");
-                if (morocco) setSelectedCountry(morocco);
-            } catch (err) {
-                console.error("Failed to fetch countries", err);
-            } finally {
-                setLoadingCountries(false);
-            }
-        }
-        fetchCountries();
-    }, []);
+    function getFullPhone() {
+        return selectedCountryRef.current.code + phone.replace(/^0+/, "");
+    }
 
     async function handleResendCode() {
         if (!canResend) return;
@@ -85,7 +58,7 @@ export default function ResetPassword() {
         try {
             const payload = method === "email"
                 ? { email }
-                : { phone: selectedCountry.code + phone.replace(/^0+/, "") }; // Handle phone format
+                : { phone: getFullPhone() };
 
             await api("/api/auth/forgot-password", {
                 method: "POST",
@@ -111,14 +84,13 @@ export default function ResetPassword() {
             setLinkToken(tokenFromUrl);
             setTokenVerifying(true);
 
-            // Vérifier automatiquement le token
             api("/api/auth/verify-code", {
                 method: "POST",
                 body: { email: emailFromUrl, token: tokenFromUrl },
             })
                 .then((data) => {
-                    setCode(data.code); // Stocker le code retourné
-                    setStep(3); // Aller directement à l'étape de réinitialisation
+                    setCode(data.code);
+                    setStep(3);
                 })
                 .catch((err) => {
                     setError(err.message || "Lien invalide ou expiré. Veuillez demander un nouveau code.");
@@ -139,7 +111,7 @@ export default function ResetPassword() {
         try {
             const payload = method === "email"
                 ? { email }
-                : { phone: selectedCountry.code + phone.replace(/^0+/, "") };
+                : { phone: getFullPhone() };
 
             await api("/api/auth/forgot-password", {
                 method: "POST",
@@ -163,14 +135,11 @@ export default function ResetPassword() {
 
         setLoading(true);
         try {
-            // Reconstruct phone if using SMS
-            const finalPhone = selectedCountry.code + phone.replace(/^0+/, "");
-
             await api("/api/auth/verify-code", {
                 method: "POST",
                 body: method === "email"
                     ? { email: email, code }
-                    : { phone: finalPhone, code },
+                    : { phone: getFullPhone(), code },
             });
             setStep(3);
         } catch (err) {
@@ -192,13 +161,11 @@ export default function ResetPassword() {
         setLoading(true);
 
         try {
-            const finalPhone = selectedCountry.code + phone.replace(/^0+/, "");
-
             await api("/api/auth/reset-password", {
                 method: "POST",
                 body: method === "email"
                     ? { email, code, token: linkToken, password }
-                    : { phone: finalPhone, code, token: linkToken, password },
+                    : { phone: getFullPhone(), code, token: linkToken, password },
             });
             setSuccess(true);
             setTimeout(() => navigate("/login"), 3000);
@@ -210,45 +177,59 @@ export default function ResetPassword() {
     }
 
     return (
-        <div className="flex min-h-screen items-center justify-center p-4 bg-gray-50">
-            <div className="flex w-full max-w-6xl flex-col overflow-hidden rounded-3xl bg-white shadow-xl md:flex-row">
+        <div className="relative flex min-h-screen items-center justify-center p-4 bg-gray-50 dark:bg-[#0B1120]">
+
+            {/* Dark Mode Toggle — Top Right */}
+            <button
+                onClick={toggleDarkMode}
+                className="absolute top-6 right-6 z-50 p-2.5 rounded-xl bg-white/80 dark:bg-white/10 backdrop-blur-sm border border-gray-200 dark:border-white/10 shadow-sm hover:shadow-md hover:scale-105 cursor-pointer"
+                aria-label="Toggle dark mode"
+            >
+                {darkMode ? (
+                    <Sun size={20} className="text-orange-400" />
+                ) : (
+                    <Moon size={20} className="text-gray-600" />
+                )}
+            </button>
+
+            <div className="flex w-full max-w-6xl flex-col overflow-hidden rounded-3xl bg-white dark:bg-[#0F172A]/90 dark:backdrop-blur-2xl dark:border dark:border-white/[0.08] shadow-xl dark:shadow-[0_8px_32px_rgba(0,0,0,0.4)] md:flex-row">
 
                 {/* LEFT */}
                 <div className="form-container w-full md:w-1/2 p-8 md:p-12 lg:p-16 flex flex-col justify-center">
 
-                    <div className="mb-8 flex items-center">
+                    <div className="mb-8 flex items-center cursor-pointer" onClick={() => navigate("/")}>
                         <img src={logo} alt="Logo" className="mr-2 h-11 w-11" />
-                        <span className="text-2xl font-bold text-slate-900">
-                            Rental<span className="text-blue-700">Car</span>
+                        <span className="text-2xl font-bold text-slate-900 dark:text-white">
+                            Rental<span className="text-blue-700 dark:text-blue-400">Car</span>
                         </span>
                     </div>
 
                     {tokenVerifying ? (
                         <div className="text-center py-12">
-                            <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-blue-200 border-t-blue-600"></div>
-                            <p className="text-gray-600">Vérification du lien...</p>
+                            <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-orange-200 dark:border-orange-900/40 border-t-orange-500"></div>
+                            <p className="text-gray-600 dark:text-gray-400">Vérification du lien...</p>
                         </div>
                     ) : !success ? (
                         <>
                             {step === 1 && (
                                 <>
-                                    <h1 className="text-3xl font-bold text-gray-800 mb-2 leading-tight">
+                                    <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-2 leading-tight">
                                         Mot de passe oublié ?
                                     </h1>
-                                    <p className="text-gray-500 text-sm mb-6">
+                                    <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">
                                         Choisissez comment recevoir votre code de vérification.
                                     </p>
 
                                     {/* Toggle Method */}
-                                    <div className="flex rounded-lg bg-gray-100 p-1 mb-6">
+                                    <div className="flex rounded-lg bg-gray-100 dark:bg-white/[0.06] p-1 mb-6">
                                         <button
-                                            className={`flex-1 rounded-md py-2 text-sm font-medium transition cursor-pointer ${method === "email" ? "bg-white text-blue-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+                                            className={`flex-1 rounded-md py-2 text-sm font-medium transition cursor-pointer ${method === "email" ? "bg-white dark:bg-white/[0.1] text-blue-600 dark:text-blue-400 shadow-sm" : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"}`}
                                             onClick={() => setMethod("email")}
                                         >
                                             Email
                                         </button>
                                         <button
-                                            className={`flex-1 rounded-md py-2 text-sm font-medium transition cursor-pointer ${method === "sms" ? "bg-white text-blue-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+                                            className={`flex-1 rounded-md py-2 text-sm font-medium transition cursor-pointer ${method === "sms" ? "bg-white dark:bg-white/[0.1] text-blue-600 dark:text-blue-400 shadow-sm" : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"}`}
                                             onClick={() => setMethod("sms")}
                                         >
                                             SMS
@@ -263,47 +244,19 @@ export default function ResetPassword() {
                                                     type="email"
                                                     placeholder="Adresse e-mail"
                                                     required
-                                                    className="input-focus w-full rounded-xl bg-gray-100 px-5 py-3 placeholder-gray-500 transition text-gray-900"
+                                                    className="input-focus w-full rounded-xl bg-gray-100 dark:bg-white/[0.06] dark:border dark:border-white/[0.1] px-5 py-3 placeholder-gray-500 dark:placeholder-gray-500 transition text-gray-900 dark:text-white"
                                                     value={email}
                                                     onChange={(e) => setEmail(e.target.value)}
                                                 />
                                             ) : (
-                                                <div className="flex gap-2">
-                                                    {/* Country Selector */}
-                                                    <div className="relative w-1/3">
-                                                        <select
-                                                            className="appearance-none input-focus w-full rounded-xl bg-gray-100 pl-3 pr-8 py-3 transition text-gray-900 cursor-pointer"
-                                                            value={selectedCountry.cca2}
-                                                            onChange={(e) => {
-                                                                const c = countries.find(c => c.cca2 === e.target.value);
-                                                                if (c) setSelectedCountry(c);
-                                                            }}
-                                                        >
-                                                            {countries.map((c) => (
-                                                                <option key={c.cca2} value={c.cca2}>
-                                                                    {c.cca2} ({c.code})
-                                                                </option>
-                                                            ))}
-                                                        </select>
-                                                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                                                            <span className="text-xs">▼</span>
-                                                        </div>
-                                                        <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                                                            {/* Optional flag display if needed, but select usually handles native text nicely */}
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Phone Input */}
-                                                    <input
-                                                        key="phone-input"
-                                                        type="tel"
-                                                        placeholder="Numéro de téléphone"
-                                                        required
-                                                        className="input-focus flex-1 rounded-xl bg-gray-100 px-5 py-3 placeholder-gray-500 transition text-gray-900"
-                                                        value={phone}
-                                                        onChange={(e) => setPhone(e.target.value)}
-                                                    />
-                                                </div>
+                                                <PhoneInput
+                                                    value={phone}
+                                                    onChange={setPhone}
+                                                    onCountryChange={(c) => { selectedCountryRef.current = c; }}
+                                                    required
+                                                    placeholder="Numéro de téléphone"
+                                                    variant="auth"
+                                                />
                                             )}
                                         </div>
                                         <button
@@ -319,11 +272,11 @@ export default function ResetPassword() {
 
                             {step === 2 && (
                                 <>
-                                    <h1 className="text-3xl font-bold text-gray-800 mb-2 leading-tight">
+                                    <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-2 leading-tight">
                                         Vérification
                                     </h1>
-                                    <p className="text-gray-500 text-sm mb-8">
-                                        Saisissez le code à 6 chiffres envoyé à <strong>{method === "email" ? email : `${selectedCountry.code} ${phone}`}</strong>.
+                                    <p className="text-gray-500 dark:text-gray-400 text-sm mb-8">
+                                        Saisissez le code à 6 chiffres envoyé à <strong className="text-gray-700 dark:text-gray-200">{method === "email" ? email : `${selectedCountryRef.current.code} ${phone}`}</strong>.
                                     </p>
 
                                     <form onSubmit={handleVerifyCode}>
@@ -334,12 +287,12 @@ export default function ResetPassword() {
                                                 maxLength={6}
                                                 required
                                                 autoFocus
-                                                className="input-focus w-full rounded-xl bg-gray-100 px-5 py-3 placeholder-gray-500 transition text-gray-900 text-center text-3xl tracking-[0.5em] font-bold"
+                                                className="input-focus w-full rounded-xl bg-gray-100 dark:bg-white/[0.06] dark:border dark:border-white/[0.1] px-5 py-3 placeholder-gray-500 dark:placeholder-gray-500 transition text-gray-900 dark:text-white text-center text-3xl tracking-[0.5em] font-bold"
                                                 value={code}
                                                 onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
                                             />
                                         </div>
-                                        {error && <div className="mb-4 text-sm text-red-600">{error}</div>}
+                                        {error && <div className="mb-4 text-sm text-red-500 dark:text-red-400">{error}</div>}
                                         <button
                                             type="submit"
                                             disabled={loading}
@@ -353,8 +306,8 @@ export default function ResetPassword() {
                                                 onClick={handleResendCode}
                                                 disabled={!canResend || loading}
                                                 className={`text-sm font-medium transition ${canResend
-                                                    ? "text-blue-600 hover:text-blue-700 cursor-pointer"
-                                                    : "text-gray-400 cursor-not-allowed"
+                                                    ? "text-orange-500 hover:text-orange-600 cursor-pointer"
+                                                    : "text-gray-400 dark:text-gray-600 cursor-not-allowed"
                                                     }`}
                                             >
                                                 {canResend
@@ -362,7 +315,7 @@ export default function ResetPassword() {
                                                     : `Renvoyer le code (${countdown}s)`}
                                             </button>
 
-                                            <button type="button" onClick={() => setStep(1)} className="text-xs text-gray-500 hover:text-blue-600 transition">
+                                            <button type="button" onClick={() => setStep(1)} className="text-xs text-gray-500 dark:text-gray-400 hover:text-orange-500 dark:hover:text-orange-400 transition">
                                                 Changer de méthode / d'adresse
                                             </button>
                                         </div>
@@ -372,10 +325,10 @@ export default function ResetPassword() {
 
                             {step === 3 && (
                                 <>
-                                    <h1 className="text-3xl font-bold text-gray-800 mb-2 leading-tight">
+                                    <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-2 leading-tight">
                                         Nouveau mot de passe
                                     </h1>
-                                    <p className="text-gray-500 text-sm mb-8">
+                                    <p className="text-gray-500 dark:text-gray-400 text-sm mb-8">
                                         Votre code est validé. Choisissez maintenant votre nouveau mot de passe.
                                     </p>
 
@@ -386,7 +339,7 @@ export default function ResetPassword() {
                                                 placeholder="Nouveau mot de passe"
                                                 required
                                                 autoFocus
-                                                className="input-focus w-full rounded-xl bg-gray-100 px-5 py-3 placeholder-gray-500 transition text-gray-900"
+                                                className="input-focus w-full rounded-xl bg-gray-100 dark:bg-white/[0.06] dark:border dark:border-white/[0.1] px-5 py-3 placeholder-gray-500 dark:placeholder-gray-500 transition text-gray-900 dark:text-white"
                                                 value={password}
                                                 onChange={(e) => setPassword(e.target.value)}
                                             />
@@ -396,12 +349,12 @@ export default function ResetPassword() {
                                                 type="password"
                                                 placeholder="Confirmer le mot de passe"
                                                 required
-                                                className="input-focus w-full rounded-xl bg-gray-100 px-5 py-3 placeholder-gray-500 transition text-gray-900"
+                                                className="input-focus w-full rounded-xl bg-gray-100 dark:bg-white/[0.06] dark:border dark:border-white/[0.1] px-5 py-3 placeholder-gray-500 dark:placeholder-gray-500 transition text-gray-900 dark:text-white"
                                                 value={confirmPassword}
                                                 onChange={(e) => setConfirmPassword(e.target.value)}
                                             />
                                         </div>
-                                        {error && <div className="mb-4 text-sm text-red-600">{error}</div>}
+                                        {error && <div className="mb-4 text-sm text-red-500 dark:text-red-400">{error}</div>}
                                         <button
                                             type="submit"
                                             disabled={loading}
@@ -415,7 +368,7 @@ export default function ResetPassword() {
 
                             {step === 1 && (
                                 <div className="mt-6 text-center">
-                                    <button onClick={() => navigate("/login")} className="text-sm text-blue-600 hover:underline cursor-pointer">
+                                    <button onClick={() => navigate("/login")} className="text-sm text-orange-500 dark:text-orange-400 hover:underline cursor-pointer">
                                         ← Retour à la connexion
                                     </button>
                                 </div>
@@ -423,13 +376,13 @@ export default function ResetPassword() {
                         </>
                     ) : (
                         <div className="text-center">
-                            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-green-600">
+                            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400">
                                 <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                 </svg>
                             </div>
-                            <h3 className="text-xl font-bold text-gray-800 mb-2">C'est fait !</h3>
-                            <p className="text-gray-500 text-sm mb-4">
+                            <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">C'est fait !</h3>
+                            <p className="text-gray-500 dark:text-gray-400 text-sm mb-4">
                                 Votre mot de passe a été mis à jour avec succès. Redirection vers la connexion...
                             </p>
                         </div>
@@ -442,13 +395,13 @@ export default function ResetPassword() {
                         <video className="video-background h-full w-full object-cover" autoPlay loop muted playsInline>
                             <source src={video} type="video/mp4" />
                         </video>
-                        <div className="video-overlay absolute inset-0 bg-blue-900/40" />
+                        <div className="video-overlay absolute inset-0 bg-blue-900/40 dark:bg-[#0B1120]/60" />
                         <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-12">
                             <h1 className="mb-4 text-4xl font-bold text-white leading-tight">
                                 Sécurité & Continuité
                             </h1>
                             <p className="text-lg text-white/90">
-                                Protégez l’accès à votre plateforme de gestion de location.
+                                Protégez l'accès à votre plateforme de gestion de location.
                             </p>
                         </div>
                     </div>

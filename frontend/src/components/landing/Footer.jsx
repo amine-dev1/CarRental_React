@@ -8,12 +8,12 @@ const Footer = () => {
     const navigate = useNavigate();
 
     return (
-        <footer className="bg-gray-900 text-gray-300">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
-                <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
+        <footer className="bg-gray-900 dark:bg-[#030712] text-gray-300">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12 lg:py-16">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
                     {/* Company Info */}
                     <div className="space-y-4">
-                        <div 
+                        <div
                             className="flex items-center space-x-2 cursor-pointer"
                             onClick={() => {
                                 navigate("/");
@@ -22,7 +22,7 @@ const Footer = () => {
                         >
                             <img src={logo} alt="logo" className="h-11 w-11" />
                             <span className="text-2xl font-bold text-white">
-                                Rental<span className="text-blue-700">Car</span>
+                                Rental<span className="text-blue-700 dark:text-blue-400">Car</span>
                             </span>
                         </div>
                         <p className="text-sm leading-relaxed">
@@ -34,7 +34,7 @@ const Footer = () => {
                                 href="https://www.facebook.com/yourpage"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-[#1877F2] transition-colors"
+                                className="w-10 h-10 bg-gray-800 dark:bg-white/5 rounded-full flex items-center justify-center hover:bg-[#1877F2] transition-colors"
                             >
                                 <Facebook size={20} />
                             </a>
@@ -44,7 +44,7 @@ const Footer = () => {
                                 href="https://twitter.com/yourprofile"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-black transition-colors"
+                                className="w-10 h-10 bg-gray-800 dark:bg-white/5 rounded-full flex items-center justify-center hover:bg-black transition-colors"
                             >
                                 <Twitter size={20} />
                             </a>
@@ -54,7 +54,7 @@ const Footer = () => {
                                 href="https://www.instagram.com/yourprofile"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-pink-600 transition-colors"
+                                className="w-10 h-10 bg-gray-800 dark:bg-white/5 rounded-full flex items-center justify-center hover:bg-pink-600 transition-colors"
                             >
                                 <Instagram size={20} />
                             </a>
@@ -64,7 +64,7 @@ const Footer = () => {
                                 href="https://www.linkedin.com/company/yourcompany"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-[#0A66C2] transition-colors"
+                                className="w-10 h-10 bg-gray-800 dark:bg-white/5 rounded-full flex items-center justify-center hover:bg-[#0A66C2] transition-colors"
                             >
                                 <Linkedin size={20} />
                             </a>
@@ -74,7 +74,7 @@ const Footer = () => {
                                 href="https://wa.me/212770698980"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-[#25D366] transition-colors"
+                                className="w-10 h-10 bg-gray-800 dark:bg-white/5 rounded-full flex items-center justify-center hover:bg-[#25D366] transition-colors"
                             >
                                 <FaWhatsapp size={20} />
                             </a>
@@ -144,7 +144,7 @@ const Footer = () => {
                     </div>
                 </div>
 
-                <div className="border-t border-gray-800 mt-12 pt-8">
+                <div className="border-t border-gray-800 dark:border-white/5 mt-12 pt-8">
                     <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
                         <p className="text-sm text-gray-400">
                             © 2024 RentalCar. Tous droits réservés.

@@ -9,6 +9,7 @@ import {
     XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
 import PlanBadge from '../../components/dashboard/PlanBadge';
+import SubscriptionCounter from '../../components/dashboard/SubscriptionCounter';
 import { useTheme } from '../../context/ThemeContext';
 
 export default function DashboardEnterprise() {
@@ -93,24 +94,37 @@ export default function DashboardEnterprise() {
                     <PlanBadge plan="Enterprise" />
                 </div>
 
-                {/* AI Insights Banner */}
-                <div className={`rounded-xl p-6 border-2 ${
-                    darkMode ? 'bg-gradient-to-r from-purple-900/20 to-pink-900/20 border-purple-500/30' : 'bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200'
-                }`}>
-                    <div className="flex items-start gap-4">
-                        <div className="p-3 rounded-lg bg-gradient-to-br from-purple-500 to-pink-600">
-                            <Zap className="w-6 h-6 text-white" />
+                <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                    <div className="lg:col-span-3">
+                        {/* AI Insights Banner */}
+                        <div className={`rounded-xl p-5 border-2 h-full ${
+                            darkMode ? 'bg-gradient-to-r from-purple-900/20 to-pink-900/20 border-purple-500/30' : 'bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200'
+                        }`}>
+                            <div className="flex items-start gap-4">
+                                <div className="p-3 rounded-lg bg-gradient-to-br from-purple-500 to-pink-600">
+                                    <Zap className="w-6 h-6 text-white" />
+                                </div>
+                                <div className="flex-1">
+                                    <h3 className={`font-bold mb-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                                        🤖 Intelligence Artificielle
+                                    </h3>
+                                    <ul className={`space-y-1 text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                        <li>• Prédiction: +15% de locations ce weekend (Recommande +2 véhicules)</li>
+                                        <li>• Tarification optimale suggérée: $85/jour pour SUV</li>
+                                        <li>• Meilleure performance: {stats?.totalVehicles?.current > 0 ? 'Toyota RAV4' : 'Véhicule le plus populaire'} (95% d'utilisation)</li>
+                                    </ul>
+                                </div>
+                            </div>
                         </div>
-                        <div className="flex-1">
-                            <h3 className={`font-bold mb-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                                🤖 Intelligence Artificielle
-                            </h3>
-                            <ul className={`space-y-1 text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                                <li>• Prédiction: +15% de locations ce weekend (Recommande +2 véhicules)</li>
-                                <li>• Tarification optimale suggérée: $85/jour pour SUV</li>
-                                <li>• Meilleure performance: {stats?.totalVehicles?.current > 0 ? 'Toyota RAV4' : 'Véhicule le plus populaire'} (95% d'utilisation)</li>
-                            </ul>
-                        </div>
+                    </div>
+                    <div className="lg:col-span-1">
+                        <SubscriptionCounter 
+                            endDate={dashboardData.enterprise?.subscription_end}
+                            status={dashboardData.enterprise?.subscription_status}
+                            billingPeriod={dashboardData.enterprise?.billing_period}
+                            plan={dashboardData.enterprise?.plan}
+                            darkMode={darkMode}
+                        />
                     </div>
                 </div>
 

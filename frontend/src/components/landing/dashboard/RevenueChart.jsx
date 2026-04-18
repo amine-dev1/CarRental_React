@@ -6,6 +6,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import CustomSelect from "../../common/CustomSelect";
 import { useTheme } from "../../../context/ThemeContext";
 
 export default function RevenueChart({ data, totalRevenue, period, onPeriodChange }) {
@@ -40,18 +41,16 @@ export default function RevenueChart({ data, totalRevenue, period, onPeriodChang
                 <span className="text-xs">▲</span> +12.5%
             </div>
             
-            <select 
+            <CustomSelect
                 value={period}
-                onChange={(e) => onPeriodChange(e.target.value)}
-                className={`
-                    ${darkMode ? 'bg-white/5 border-white/10 text-gray-300 hover:bg-white/10' : 'bg-white/50 border-white/20 text-gray-700 hover:bg-white/80'}
-                    backdrop-blur-sm border rounded-xl px-3 py-1.5 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-secondary/50 cursor-pointer shadow-sm transition-all
-                `}
-            >
-                <option value="weekly" className={darkMode ? 'bg-[#111827] text-white' : ''}>Semaine</option>
-                <option value="monthly" className={darkMode ? 'bg-[#111827] text-white' : ''}>Mensuel</option>
-                <option value="annual" className={darkMode ? 'bg-[#111827] text-white' : ''}>Annuel</option>
-            </select>
+                onChange={onPeriodChange}
+                options={[
+                    { value: 'weekly', label: 'Semaine' },
+                    { value: 'monthly', label: 'Mensuel' },
+                    { value: 'annual', label: 'Annuel' }
+                ]}
+                className="w-32"
+            />
         </div>
       </div>
 

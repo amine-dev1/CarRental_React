@@ -6,7 +6,10 @@
   "scripts": {
     "dev": "nodemon src/index.js",
     "start": "node src/index.js",
-    "migrate": "node scripts/migrate.js"
+    "migrate": "node scripts/migrate.js",
+    "migrate:subscriptions": "node scripts/migrate-subscriptions.js",
+    "stripe:setup": "node scripts/stripe-setup.js",
+    "grace:check": "node scripts/grace-check.js"
   },
   "keywords": [],
   "author": "",
@@ -18,12 +21,14 @@
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
+    "express-rate-limit": "^8.3.2",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.3",
     "morgan": "^1.10.1",
     "node-fetch": "^2.7.0",
     "nodemailer": "^7.0.12",
     "pg": "^8.16.3",
+    "stripe": "^22.0.1",
     "zod": "^4.3.5"
   },
   "devDependencies": {

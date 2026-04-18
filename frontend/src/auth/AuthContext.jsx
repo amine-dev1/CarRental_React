@@ -44,6 +44,20 @@ export function AuthProvider({ children }) {
         setUser(null);
     }
 
+    async function register(data) {
+        try {
+            const res = await api("/api/auth/register", {
+                method: "POST",
+                body: data
+            });
+            localStorage.setItem("token", res.token);
+            setUser(res.user);
+            setLoading(false);
+        } catch (error) {
+            throw error;
+        }
+    }
+
     useEffect(() => {
         // Only load if token exists
         if (localStorage.getItem("token")) {
@@ -54,7 +68,7 @@ export function AuthProvider({ children }) {
     }, []);
 
     return (
-        <AuthContext.Provider value={{ user, login, logout, loading }}>
+        <AuthContext.Provider value={{ user, login, logout, register, loading }}>
             {children}
         </AuthContext.Provider>
     );

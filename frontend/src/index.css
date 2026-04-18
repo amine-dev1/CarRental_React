@@ -1,21 +1,23 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-primary: #2563EB;
---color-primary-dark: #1D4ED8;
+  --color-primary-dark: #1D4ED8;
 
---color-accent: #10B981;
---color-accent-dark: #059669;
+  --color-accent: #10B981;
+  --color-accent-dark: #059669;
 
---color-background: #F8FAFC;
---color-surface: #FFFFFF;
+  --color-background: #F8FAFC;
+  --color-surface: #FFFFFF;
 
---color-border: #E5E7EB;
+  --color-border: #E5E7EB;
 
---color-text-primary: #111827;
---color-text-secondary: #6B7280;
+  --color-text-primary: #111827;
+  --color-text-secondary: #6B7280;
 
---color-footer: #0F172A;
+  --color-footer: #0F172A;
 
   --color-deep-50: #eff6ff;
   --color-deep-100: #dbeafe;
@@ -54,6 +56,12 @@
     --color-text-secondary: #94A3B8;
     --color-background-sidebar: #0B1220;
     --color-text-muted: #64748B;
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-text-primary);
+    transition: background-color 0.1s ease-in-out, color 0.1s ease-in-out;
   }
 
   button,

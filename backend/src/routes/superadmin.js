@@ -11,14 +11,14 @@ r.use(requireRole("superadmin"));
 
 r.get("/stats", async (req, res) => {
     const { period = 'monthly' } = req.query;
-    
+
     const enterprises = await query("SELECT count(*) FROM enterprises");
     const users = await query("SELECT count(*) FROM users");
     const activeSubscriptions = await query("SELECT count(*) FROM enterprises WHERE status = 'active' AND plan IN ('Pro', 'Enterprise')");
-    
+
     // Total Revenue (all time cents)
     const revTotal = await query("SELECT COALESCE(SUM(amount_cents), 0) as total FROM payments");
-    
+
     let chartQuery = "";
     if (period === 'weekly') {
         chartQuery = `
@@ -74,14 +74,14 @@ const EnterpriseSchema = z.object({
     name: z.string().min(2),
     address: z.string().optional(),
     status: z.enum(["active", "suspended"]).optional(),
-    plan: z.enum(["Free", "Pro", "Enterprise"]).optional(),
+    plan: z.enum(["Standard", "Pro", "Enterprise"]).optional(),
 });
 
 r.post("/enterprises", async (req, res) => {
     const parsed = EnterpriseSchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json(parsed.error);
 
-    const { name, address, status = "active", plan = "Free" } = parsed.data;
+    const { name, address, status = "active", plan = "Standard" } = parsed.data;
 
     const result = await query(
         `INSERT INTO enterprises(name, address, status, plan) VALUES($1, $2, $3, $4) RETURNING *`,
@@ -111,7 +111,7 @@ const UpdateEnterpriseSchema = z.object({
     name: z.string().min(2).optional(),
     address: z.string().optional(),
     status: z.enum(["active", "suspended"]).optional(),
-    plan: z.enum(["Free", "Pro", "Enterprise"]).optional(),
+    plan: z.enum(["Standard", "Pro", "Enterprise"]).optional(),
 });
 
 r.put("/enterprises/:id", async (req, res) => {
@@ -171,31 +171,31 @@ r.patch("/enterprises/:id/status", async (req, res) => {
 
 r.delete("/enterprises/:id", async (req, res) => {
     const { id } = req.params;
-    
+
     const client = await pool.connect();
-    
+
     try {
         await client.query('BEGIN');
 
         // Delete all related data in order because of foreign key constraints (ON DELETE RESTRICT)
         // 1. Payments (link to rentals)
         await client.query('DELETE FROM payments WHERE enterprise_id=$1', [id]);
-        
+
         // 2. Rentals (link to customers, vehicles)
         await client.query('DELETE FROM rentals WHERE enterprise_id=$1', [id]);
-        
+
         // 3. Vehicles
         await client.query('DELETE FROM vehicles WHERE enterprise_id=$1', [id]);
-        
+
         // 4. Customers
         await client.query('DELETE FROM customers WHERE enterprise_id=$1', [id]);
-        
+
         // 5. Users
         await client.query('DELETE FROM users WHERE enterprise_id=$1', [id]);
-        
+
         // 6. Enterprise itself
         const result = await client.query('DELETE FROM enterprises WHERE id=$1 RETURNING id', [id]);
-        
+
         if (!result.rows[0]) {
             await client.query('ROLLBACK');
             return res.status(404).json({ error: "Enterprise not found" });
@@ -203,7 +203,7 @@ r.delete("/enterprises/:id", async (req, res) => {
 
         await client.query('COMMIT');
         res.json({ message: "Enterprise and all related data deleted", id: result.rows[0].id });
-        
+
     } catch (error) {
         await client.query('ROLLBACK');
         console.error("Error deleting enterprise:", error);

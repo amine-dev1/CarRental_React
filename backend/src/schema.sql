@@ -8,10 +8,23 @@ CREATE TABLE IF NOT EXISTS enterprises (
   id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   name text NOT NULL,
   address text,
-  status text NOT NULL DEFAULT 'active', -- active | suspended
-  plan text NOT NULL DEFAULT 'Free', -- Free | Pro | Enterprise
-  max_vehicles int NOT NULL DEFAULT 5, -- Free: 5, Pro: 50, Enterprise: 999999
-  max_users int NOT NULL DEFAULT 2, -- Free: 2, Pro: 10, Enterprise: 999999
+  registry_number character varying(100),
+  country character varying(100),
+  city character varying(100),
+  vat_number character varying(100),
+  enterprise_phone character varying(50),
+  status text NOT NULL DEFAULT 'active', -- active | suspended | deactivated
+  plan text NOT NULL DEFAULT 'Standard', -- Standard | Pro | Enterprise
+  max_vehicles int NOT NULL DEFAULT 5, -- Standard: 5, Pro: 50, Enterprise: 999999
+  max_users int NOT NULL DEFAULT 2, -- Standard: 2, Pro: 10, Enterprise: 999999
+  trial_end timestamptz, -- NULL = no trial, date = trial end
+  gateway_customer_id text UNIQUE,
+  gateway_subscription_id text UNIQUE,
+  payment_gateway character varying(50), -- stripe | paypal
+  subscription_status text DEFAULT 'none', -- none | active | past_due | canceled
+  billing_period text DEFAULT 'monthly', -- monthly | yearly
+  grace_period_end timestamptz,
+  deactivated_at timestamptz,
   created_at timestamptz NOT NULL DEFAULT now()
 );
 
@@ -237,3 +250,25 @@ BEGIN
     WHERE (status <> 'canceled');
   END IF;
 END$$;
+
+-- =========================
+-- PAYMENT GATEWAY CONFIG
+-- Stores Stripe/PayPal Price IDs created by setup script
+-- =========================
+CREATE TABLE IF NOT EXISTS payment_gateway_config (
+  key text PRIMARY KEY,
+  value text NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- =========================
+-- PENDING REGISTRATIONS
+-- Stores registration data temporarily before PayPal payment is confirmed.
+-- Cleaned up after account creation via webhook.
+-- =========================
+CREATE TABLE IF NOT EXISTS pending_registrations (
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  email text UNIQUE NOT NULL,
+  data jsonb NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now()
+);

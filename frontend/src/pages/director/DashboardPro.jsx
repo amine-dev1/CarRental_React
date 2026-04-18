@@ -9,6 +9,7 @@ import {
     XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
 import PlanBadge from '../../components/dashboard/PlanBadge';
+import SubscriptionCounter from '../../components/dashboard/SubscriptionCounter';
 import { useTheme } from '../../context/ThemeContext';
 
 export default function DashboardPro() {
@@ -78,7 +79,7 @@ export default function DashboardPro() {
         <div className={`min-h-screen p-6 ${darkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
             <div className="max-w-7xl mx-auto space-y-6">
                 {/* Header */}
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between pb-2">
                     <div>
                         <h1 className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                             Tableau de bord Professionnel
@@ -90,29 +91,43 @@ export default function DashboardPro() {
                     <PlanBadge plan="Pro" />
                 </div>
 
-                {/* Alerts */}
-                {alerts && alerts.length > 0 && (
-                    <div className="space-y-2">
-                        {alerts.map((alert) => (
-                            <div
-                                key={alert.id}
-                                className={`flex items-center gap-3 p-4 rounded-lg ${
-                                    alert.type === 'warning'
-                                        ? darkMode ? 'bg-amber-500/10 border border-amber-500/30' : 'bg-amber-50 border border-amber-200'
-                                        : darkMode ? 'bg-blue-500/10 border border-blue-500/30' : 'bg-blue-50 border border-blue-200'
-                                }`}
-                            >
-                                <AlertCircle className={`w-5 h-5 ${alert.type === 'warning' ? 'text-amber-500' : 'text-blue-500'}`} />
-                                <span className={`flex-1 font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                                    {alert.message}
-                                </span>
-                                <span className={`text-sm ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>
-                                    {alert.time}
-                                </span>
+                {/* Top Section: Alerts & Subscription */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div className="lg:col-span-2 space-y-4">
+                        {alerts && alerts.length > 0 ? (
+                            alerts.map((alert) => (
+                                <div
+                                    key={alert.id}
+                                    className={`flex items-center gap-3 p-4 rounded-xl ${
+                                        alert.type === 'warning'
+                                            ? darkMode ? 'bg-amber-500/10 border border-amber-500/30' : 'bg-amber-50 border border-amber-200'
+                                            : darkMode ? 'bg-blue-500/10 border border-blue-500/30' : 'bg-blue-50 border border-blue-200'
+                                    }`}
+                                >
+                                    <AlertCircle className={`w-5 h-5 ${alert.type === 'warning' ? 'text-amber-500' : 'text-blue-500'}`} />
+                                    <span className={`flex-1 font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                                        {alert.message}
+                                    </span>
+                                </div>
+                            ))
+                        ) : (
+                            <div className={`p-4 rounded-xl border border-dashed ${darkMode ? 'border-gray-700 bg-gray-800/20' : 'border-gray-200 bg-gray-50/50'}`}>
+                                <p className={`text-sm text-center ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                                    Aucune notification pour le moment
+                                </p>
                             </div>
-                        ))}
+                        )}
                     </div>
-                )}
+                    <div className="lg:col-span-1">
+                        <SubscriptionCounter 
+                            endDate={dashboardData.enterprise?.subscription_end}
+                            status={dashboardData.enterprise?.subscription_status}
+                            billingPeriod={dashboardData.enterprise?.billing_period}
+                            plan={dashboardData.enterprise?.plan}
+                            darkMode={darkMode}
+                        />
+                    </div>
+                </div>
 
                 {/* Stats Grid - 6 KPI Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

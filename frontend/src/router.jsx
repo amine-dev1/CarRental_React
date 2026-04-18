@@ -3,6 +3,7 @@ import { AuthProvider } from "./auth/AuthContext";
 import ProtectedRoute from "./auth/ProtectedRoute";
 
 import Login from "./pages/auth/Login";
+import Register from "./pages/auth/Register";
 import ResetPassword from "./pages/auth/ResetPassword";
 import SuperAdminLayout from "./layouts/SuperAdminLayout";
 import SuperAdminDashboard from "./pages/superadmin/Dashboard";
@@ -23,6 +24,7 @@ export default function Router() {
                 <Routes>
                     <Route path="/" element={<LandingPage />} />
                     <Route path="/login" element={<Login />} />
+                    <Route path="/register" element={<Register />} />
                     <Route path="/reset-password" element={<ResetPassword />} />
 
                     {/* Superadmin Routes */}

@@ -2,7 +2,7 @@ import { Router } from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { z } from "zod";
-import { query } from "../db.js";
+import { query, pool } from "../db.js";
 import { requireAuth } from "../middleware/auth.js";
 import { requireRole } from "../middleware/roles.js";
 
@@ -40,6 +40,93 @@ r.post("/bootstrap-superadmin", async (req, res) => {
     res.json(result.rows[0]);
 });
 
+// ========================
+// REGISTER (self-service)
+// ========================
+const PLAN_LIMITS = {
+    Standard: { max_vehicles: 5, max_users: 1 },
+    Pro: { max_vehicles: 50, max_users: 1000 },
+    Enterprise: { max_vehicles: 999999, max_users: 999999 },
+};
+
+const RegisterSchema = z.object({
+    full_name: z.string().min(2),
+    email: z.string().email(),
+    phone: z.string().optional(),
+    password: z.string().min(6),
+    enterprise_name: z.string().min(2),
+    enterprise_address: z.string().optional(),
+    registry_number: z.string().optional(),
+    country: z.string().optional(),
+    city: z.string().optional(),
+    vat_number: z.string().optional(),
+    enterprise_phone: z.string().optional(),
+    plan: z.enum(["Standard", "Pro", "Enterprise"]),
+});
+
+r.post("/register", async (req, res) => {
+    const parsed = RegisterSchema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json(parsed.error);
+
+    const { full_name, email, phone, password, enterprise_name, enterprise_address, registry_number, country, city, vat_number, enterprise_phone, plan } = parsed.data;
+
+    // Check email uniqueness
+    const existing = await query(`SELECT id FROM users WHERE email=$1`, [email]);
+    if (existing.rows[0]) {
+        return res.status(400).json({ error: "Cet email est déjà utilisé." });
+    }
+
+    const limits = PLAN_LIMITS[plan];
+    const hash = await bcrypt.hash(password, 10);
+
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+
+        // 1. Create enterprise with 1-month trial (Standard plan only — paid plans go via payment flow)
+        const entResult = await client.query(
+            `INSERT INTO enterprises(name, address, registry_number, country, city, vat_number, enterprise_phone, plan, status, subscription_status, max_vehicles, max_users, trial_end)
+             VALUES($1, $2, $3, $4, $5, $6, $7, $8, 'active', 'none', $9, $10, NOW() + INTERVAL '1 month')
+             RETURNING *`,
+            [enterprise_name, enterprise_address || null, registry_number || null, country || null, city || null, vat_number || null, enterprise_phone || null, plan, limits.max_vehicles, limits.max_users]
+        );
+        const enterprise = entResult.rows[0];
+
+        // 2. Create director user
+        const userResult = await client.query(
+            `INSERT INTO users(enterprise_id, email, phone, full_name, password_hash, role)
+             VALUES($1, $2, $3, $4, $5, 'director')
+             RETURNING id, email, role, full_name, profile_photo, enterprise_id`,
+            [enterprise.id, email, phone || null, full_name, hash]
+        );
+        const user = userResult.rows[0];
+
+        await client.query('COMMIT');
+
+        // 3. Sign JWT
+        const token = jwt.sign(
+            {
+                id: user.id,
+                email: user.email,
+                role: user.role,
+                full_name: user.full_name,
+                profile_photo: user.profile_photo,
+                enterprise_id: user.enterprise_id,
+            },
+            process.env.JWT_SECRET,
+            { expiresIn: "7d" }
+        );
+
+        res.json({ token, user });
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error("Register error:", error);
+        res.status(500).json({ error: "Erreur lors de la création du compte." });
+    } finally {
+        client.release();
+    }
+});
+
 const LoginSchema = z.object({
     email: z.string().email(),
     password: z.string().min(6),
@@ -52,7 +139,7 @@ r.post("/login", async (req, res) => {
     const { email, password } = parsed.data;
 
     const result = await query(`
-        SELECT u.*, e.status as enterprise_status 
+        SELECT u.*, e.status as enterprise_status
         FROM users u 
         LEFT JOIN enterprises e ON u.enterprise_id = e.id 
         WHERE u.email=$1
@@ -63,8 +150,8 @@ r.post("/login", async (req, res) => {
 
     // Block if enterprise is suspended (superadmins are exempt as they have enterprise_id NULL)
     if (user.role !== 'superadmin' && user.enterprise_status === 'suspended') {
-        return res.status(403).json({ 
-            error: "Votre entreprise a été suspendue. Veuillez contacter l'administrateur du site pour plus d'informations." 
+        return res.status(403).json({
+            error: "Votre entreprise a été suspendue. Veuillez contacter l'administrateur du site pour plus d'informations."
         });
     }
 

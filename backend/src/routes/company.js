@@ -140,7 +140,8 @@ r.get("/dashboard", async (req, res) => {
 
         // Get enterprise info
         const enterpriseRes = await query(
-            `SELECT id, name, plan, status, max_vehicles, max_users FROM enterprises WHERE id=$1`,
+            `SELECT id, name, plan, status, max_vehicles, max_users, subscription_end, subscription_status, billing_period, grace_period_end 
+             FROM enterprises WHERE id=$1`,
             [eid]
         );
 
