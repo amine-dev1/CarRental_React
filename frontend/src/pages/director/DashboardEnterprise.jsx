@@ -1,342 +1,570 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../../api/http';
 import {
-    Car, Users, DollarSign, Calendar, TrendingUp, Sparkles,
-    AlertCircle, ArrowUpRight, Building2, Zap
+    TrendingUp, Car, Users, DollarSign, Calendar,
+    ChevronRight, Plus, Settings, Zap, AlertCircle,
+    ArrowUpRight, ArrowDownRight, Clock, Activity,
+    Star, Target, BarChart2, Building2
 } from 'lucide-react';
 import {
-    LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
-    XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
+    AreaChart, Area, XAxis, YAxis, CartesianGrid,
+    Tooltip, ResponsiveContainer, BarChart, Bar
 } from 'recharts';
-import PlanBadge from '../../components/dashboard/PlanBadge';
 import SubscriptionCounter from '../../components/dashboard/SubscriptionCounter';
 import { useTheme } from '../../context/ThemeContext';
 
+// ── Design tokens ───────────────────────────────────────
+const token = {
+    primary: '#6366F1',
+    primaryLight: '#EEF2FF',
+    primaryBorder: '#C7D2FE',
+    success: '#10B981',
+    successLight: '#ECFDF5',
+    warning: '#F59E0B',
+    warningLight: '#FFFBEB',
+    danger: '#EF4444',
+    dangerLight: '#FEF2F2',
+    neutral50: '#F8FAFC',
+    neutral100: '#F1F5F9',
+    neutral200: '#E2E8F0',
+    neutral400: '#94A3B8',
+    neutral600: '#475569',
+    neutral900: '#0F172A',
+    dark800: '#1E293B',
+    dark900: '#0F172A',
+};
+
+// ── Helpers ──────────────────────────────────────────────
+function DeltaBadge({ change }) {
+    const isPositive = change >= 0;
+    return (
+        <span style={{
+            display: 'inline-flex', alignItems: 'center', gap: '2px',
+            fontSize: '12px', fontWeight: 600,
+            color: isPositive ? token.success : token.danger,
+        }}>
+            {isPositive ? <ArrowUpRight size={13} /> : <ArrowDownRight size={13} />}
+            {Math.abs(change)}%
+            <span style={{ fontWeight: 400, color: token.neutral400, marginLeft: 2 }}>vs sem. préc.</span>
+        </span>
+    );
+}
+
+function EmptyState({ message, cta, onCta }) {
+    return (
+        <div style={{ textAlign: 'center', padding: '32px 16px' }}>
+            <p style={{ fontSize: '13px', color: token.neutral400, marginBottom: 12 }}>{message}</p>
+            {cta && (
+                <button onClick={onCta} style={{
+                    fontSize: '13px', fontWeight: 600, color: token.primary,
+                    background: 'none', border: 'none', cursor: 'pointer'
+                }}>
+                    {cta} →
+                </button>
+            )}
+        </div>
+    );
+}
+
+// ── Components ───────────────────────────────────────────
+
+function InsightCard({ darkMode }) {
+    return (
+        <div style={{
+            background: darkMode ? '#1E293B' : token.primaryLight,
+            border: `1px solid ${darkMode ? '#334155' : token.primaryBorder}`,
+            borderRadius: 16, padding: 24,
+        }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
+                <div style={{ flex: 1 }}>
+                    {/* Badge */}
+                    <div style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 6,
+                        background: darkMode ? '#334155' : '#fff',
+                        border: `1px solid ${darkMode ? '#475569' : token.primaryBorder}`,
+                        borderRadius: 8, padding: '4px 10px', marginBottom: 12,
+                    }}>
+                        <Zap size={12} color={token.primary} />
+                        <span style={{ fontSize: 11, fontWeight: 700, color: token.primary, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                            IA Insight
+                        </span>
+                    </div>
+
+                    {/* Main insight */}
+                    <h2 style={{
+                        fontSize: 18, fontWeight: 700, margin: '0 0 8px',
+                        color: darkMode ? '#F1F5F9' : token.neutral900,
+                        lineHeight: 1.3,
+                    }}>
+                        La demande augmente ce week-end (+15%)
+                    </h2>
+                    <p style={{
+                        fontSize: 14, color: darkMode ? '#94A3B8' : token.neutral600,
+                        margin: '0 0 20px', lineHeight: 1.6,
+                    }}>
+                        Votre flotte tourne à 78% — ajouter 2 véhicules disponibles vous permettrait de capturer <strong style={{ color: darkMode ? '#E2E8F0' : token.neutral900 }}>+$1,200 de revenu estimé</strong>.
+                    </p>
+
+                    {/* Recommendation */}
+                    <div style={{
+                        background: darkMode ? '#0F172A' : '#fff',
+                        border: `1px solid ${darkMode ? '#334155' : token.neutral200}`,
+                        borderRadius: 10, padding: '12px 16px', marginBottom: 16,
+                        display: 'flex', alignItems: 'center', gap: 10,
+                    }}>
+                        <Target size={16} color={token.primary} style={{ flexShrink: 0 }} />
+                        <span style={{ fontSize: 13, color: darkMode ? '#CBD5E1' : token.neutral600 }}>
+                            Recommandation : <strong style={{ color: darkMode ? '#F1F5F9' : token.neutral900 }}>Activer 2 véhicules supplémentaires avant vendredi 18h</strong>
+                        </span>
+                    </div>
+
+                    <button style={{
+                        fontSize: 13, fontWeight: 600, color: token.primary,
+                        background: 'none', border: 'none', cursor: 'pointer',
+                        display: 'inline-flex', alignItems: 'center', gap: 4, padding: 0,
+                    }}>
+                        Voir l'analyse complète <ChevronRight size={14} />
+                    </button>
+                </div>
+
+                {/* Illustration */}
+                <div style={{
+                    flexShrink: 0, width: 64, height: 64,
+                    background: `linear-gradient(135deg, ${token.primary}, #8B5CF6)`,
+                    borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                    <TrendingUp size={28} color="#fff" />
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function KpiBlock({ label, value, change, prefix = '', suffix = '', emptyMsg, icon: Icon, darkMode }) {
+    const isEmpty = value === 0 || value === null || value === undefined;
+    return (
+        <div style={{
+            background: darkMode ? '#1E293B' : '#fff',
+            border: `1px solid ${darkMode ? '#334155' : token.neutral200}`,
+            borderRadius: 16, padding: '20px 24px',
+            transition: 'box-shadow 150ms ease, transform 150ms ease',
+            cursor: 'default',
+        }}
+            onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.08)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+            onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'none'; }}
+        >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+                <span style={{ fontSize: 13, fontWeight: 500, color: darkMode ? token.neutral400 : token.neutral600 }}>
+                    {label}
+                </span>
+                <div style={{
+                    width: 32, height: 32, borderRadius: 8,
+                    background: darkMode ? '#334155' : token.neutral100,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                    <Icon size={16} color={darkMode ? token.neutral400 : token.neutral600} />
+                </div>
+            </div>
+
+            <div style={{
+                fontSize: 28, fontWeight: 700, marginBottom: 8,
+                color: darkMode ? '#F1F5F9' : token.neutral900,
+                lineHeight: 1,
+            }}>
+                {isEmpty ? '—' : `${prefix}${typeof value === 'number' ? value.toLocaleString() : value}${suffix}`}
+            </div>
+
+            {isEmpty && emptyMsg ? (
+                <p style={{ fontSize: 12, color: token.neutral400, lineHeight: 1.5, margin: 0 }}>
+                    {emptyMsg}
+                </p>
+            ) : (
+                <DeltaBadge change={change} />
+            )}
+        </div>
+    );
+}
+
+function SectionTitle({ children, darkMode }) {
+    return (
+        <h3 style={{
+            fontSize: 13, fontWeight: 700, letterSpacing: '0.06em',
+            textTransform: 'uppercase', color: token.neutral400,
+            margin: '0 0 16px',
+        }}>
+            {children}
+        </h3>
+    );
+}
+
+function ActionLayer({ darkMode, navigate }) {
+    const actions = [
+        { icon: Plus, label: 'Ajouter un véhicule', sub: 'Élargissez votre flotte', color: token.primary, path: '/director/fleet/new' },
+        { icon: Settings, label: 'Ajuster les tarifs', sub: 'Optimisez vos prix', color: token.warning, path: '/director/fleet' },
+        { icon: BarChart2, label: 'Voir les opportunités', sub: 'Analyse des créneaux libres', color: token.success, path: '/director/dashboard' },
+    ];
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {actions.map(({ icon: Icon, label, sub, color, path }) => (
+                <button key={label} onClick={() => navigate(path)} style={{
+                    background: darkMode ? '#1E293B' : '#fff',
+                    border: `1px solid ${darkMode ? '#334155' : token.neutral200}`,
+                    borderRadius: 12, padding: '12px 16px',
+                    display: 'flex', alignItems: 'center', gap: 12,
+                    cursor: 'pointer', textAlign: 'left', width: '100%',
+                    transition: 'background 150ms ease, box-shadow 150ms ease',
+                }}
+                    onMouseEnter={e => e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)'}
+                    onMouseLeave={e => e.currentTarget.style.boxShadow = 'none'}
+                >
+                    <div style={{
+                        width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+                        background: `${color}18`,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                        <Icon size={16} color={color} />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 14, fontWeight: 600, color: darkMode ? '#F1F5F9' : token.neutral900, marginBottom: 2 }}>{label}</div>
+                        <div style={{ fontSize: 12, color: token.neutral400 }}>{sub}</div>
+                    </div>
+                    <ChevronRight size={16} color={token.neutral400} />
+                </button>
+            ))}
+        </div>
+    );
+}
+
+function CustomTooltip({ active, payload, label, darkMode }) {
+    if (!active || !payload?.length) return null;
+    return (
+        <div style={{
+            background: darkMode ? '#1E293B' : '#fff',
+            border: `1px solid ${darkMode ? '#334155' : token.neutral200}`,
+            borderRadius: 10, padding: '10px 14px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.12)',
+        }}>
+            <p style={{ fontSize: 12, color: token.neutral400, marginBottom: 4 }}>{label}</p>
+            {payload.map(p => (
+                <p key={p.name} style={{ fontSize: 14, fontWeight: 600, color: p.color, margin: 0 }}>
+                    {p.name === 'revenue' ? `$${p.value}` : p.value}
+                </p>
+            ))}
+        </div>
+    );
+}
+
+// ── Main Dashboard ────────────────────────────────────────
 export default function DashboardEnterprise() {
-    const [dashboardData, setDashboardData] = useState(null);
+    const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const { darkMode } = useTheme();
+    const navigate = useNavigate();
 
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const data = await api('/api/company/dashboard');
-                setDashboardData(data);
-            } catch (err) {
-                console.error("Failed to fetch dashboard:", err);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchData();
+        api('/api/company/dashboard')
+            .then(d => setData(d))
+            .catch(e => console.error(e))
+            .finally(() => setLoading(false));
     }, []);
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center min-h-screen">
-                <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-yellow-500"></div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: 32, maxWidth: 1200, margin: '0 auto' }}>
+                {[1, 2, 3].map(i => (
+                    <div key={i} style={{
+                        background: darkMode ? '#1E293B' : token.neutral100,
+                        borderRadius: 16, height: i === 1 ? 140 : 100,
+                        animation: 'pulse 1.5s ease-in-out infinite',
+                    }} />
+                ))}
             </div>
         );
     }
 
-    const { stats, revenueChart, vehicleStatus, paymentMethods, recentRentals, alerts } = dashboardData;
+    if (!data) return null;
 
-    const StatCard = ({ title, value, change, icon: Icon, prefix = '', suffix = '', gradient }) => {
-        const isPositive = change >= 0;
-        return (
-            <div className={`rounded-xl p-6 shadow-lg ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'}`}>
-                <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                        <p className={`text-sm font-medium mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                            {title}
-                        </p>
-                        <h3 className={`text-3xl font-bold mb-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                            {prefix}{typeof value === 'number' ? value.toLocaleString() : value}{suffix}
-                        </h3>
-                        <div className="flex items-center gap-1">
-                            {isPositive ? (
-                                <ArrowUpRight className="w-4 h-4 text-green-600" />
-                            ) : (
-                                <ArrowUpRight className="w-4 h-4 text-red-600 rotate-90" />
-                            )}
-                            <span className={`text-sm font-semibold ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
-                                {Math.abs(change)}%
-                            </span>
-                            <span className={`text-sm ml-1 ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>
-                                vs période préc.
-                            </span>
-                        </div>
-                    </div>
-                    <div className={`p-3 rounded-lg bg-gradient-to-br ${gradient}`}>
-                        <Icon className="w-6 h-6 text-white" />
-                    </div>
-                </div>
-            </div>
-        );
-    };
+    const { stats, revenueChart, vehicleStatus, recentRentals, enterprise } = data;
+    const bg = darkMode ? token.dark900 : token.neutral50;
+    const cardBg = darkMode ? '#1E293B' : '#fff';
+    const cardBorder = darkMode ? '#334155' : token.neutral200;
+    const textPrimary = darkMode ? '#F1F5F9' : token.neutral900;
+    const textSecondary = darkMode ? token.neutral400 : token.neutral600;
 
     return (
-        <div className={`min-h-screen p-6 ${darkMode ? 'bg-gray-900' : 'bg-gradient-to-br from-gray-50 to-gray-100'}`}>
-            <div className="max-w-7xl mx-auto space-y-6">
-                {/* Premium Header */}
-                <div className="flex items-center justify-between">
+        <div style={{ background: bg, minHeight: '100vh', padding: '32px 28px' }}>
+            <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+
+                {/* ── Header ── */}
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 32 }}>
                     <div>
-                        <div className="flex items-center gap-3">
-                            <h1 className={`text-3xl font-bold bg-gradient-to-r from-yellow-500 to-amber-600 bg-clip-text text-transparent`}>
-                                Tableau de bord Enterprise
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+                            <h1 style={{ fontSize: 24, fontWeight: 700, color: textPrimary, margin: 0 }}>
+                                Vue d'ensemble
                             </h1>
-                            <Sparkles className="w-6 h-6 text-yellow-500" />
+                            <span style={{
+                                fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em',
+                                color: token.primary, background: token.primaryLight, border: `1px solid ${token.primaryBorder}`,
+                                borderRadius: 6, padding: '2px 8px',
+                            }}>
+                                Enterprise
+                            </span>
                         </div>
-                        <p className={`${darkMode ? 'text-gray-400' : 'text-gray-600'} mt-1`}>
-                            Vue complète avec analytics avancées et prédictions IA
+                        <p style={{ fontSize: 14, color: textSecondary, margin: 0 }}>
+                            {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
                         </p>
                     </div>
-                    <PlanBadge plan="Enterprise" />
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                    <div className="lg:col-span-3">
-                        {/* AI Insights Banner */}
-                        <div className={`rounded-xl p-5 border-2 h-full ${
-                            darkMode ? 'bg-gradient-to-r from-purple-900/20 to-pink-900/20 border-purple-500/30' : 'bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200'
-                        }`}>
-                            <div className="flex items-start gap-4">
-                                <div className="p-3 rounded-lg bg-gradient-to-br from-purple-500 to-pink-600">
-                                    <Zap className="w-6 h-6 text-white" />
-                                </div>
-                                <div className="flex-1">
-                                    <h3 className={`font-bold mb-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                                        🤖 Intelligence Artificielle
-                                    </h3>
-                                    <ul className={`space-y-1 text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                                        <li>• Prédiction: +15% de locations ce weekend (Recommande +2 véhicules)</li>
-                                        <li>• Tarification optimale suggérée: $85/jour pour SUV</li>
-                                        <li>• Meilleure performance: {stats?.totalVehicles?.current > 0 ? 'Toyota RAV4' : 'Véhicule le plus populaire'} (95% d'utilisation)</li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
+                {/* ── ZONE 1: INSIGHT + ACTIONS ── */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 24, marginBottom: 32 }}>
+                    <InsightCard darkMode={darkMode} />
+                    <div>
+                        <SectionTitle darkMode={darkMode}>Actions recommandées</SectionTitle>
+                        <ActionLayer darkMode={darkMode} navigate={navigate} />
                     </div>
-                    <div className="lg:col-span-1">
-                        <SubscriptionCounter 
-                            endDate={dashboardData.enterprise?.subscription_end}
-                            status={dashboardData.enterprise?.subscription_status}
-                            billingPeriod={dashboardData.enterprise?.billing_period}
-                            plan={dashboardData.enterprise?.plan}
+                </div>
+
+                {/* ── ZONE 2: BUSINESS HEALTH ── */}
+                <div style={{ marginBottom: 32 }}>
+                    <SectionTitle darkMode={darkMode}>Santé Business</SectionTitle>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+                        <KpiBlock
+                            label="Revenu total" icon={DollarSign} prefix="$"
+                            value={stats?.revenue?.current || 0} change={stats?.revenue?.change || 0}
+                            emptyMsg="Aucune transaction — créez votre première location"
+                            darkMode={darkMode}
+                        />
+                        <KpiBlock
+                            label="Locations actives" icon={Calendar}
+                            value={stats?.activeRentals?.current || 0} change={stats?.activeRentals?.change || 0}
+                            emptyMsg="Aucune location active en ce moment"
+                            darkMode={darkMode}
+                        />
+                        <KpiBlock
+                            label="Véhicules en flotte" icon={Car}
+                            value={stats?.totalVehicles?.current || 0} change={stats?.totalVehicles?.change || 0}
+                            emptyMsg="Ajoutez votre premier véhicule"
+                            darkMode={darkMode}
+                        />
+                        <KpiBlock
+                            label="Clients actifs" icon={Users}
+                            value={stats?.customers?.current || 0} change={stats?.customers?.change || 0}
+                            emptyMsg="Ajoutez votre premier client"
+                            darkMode={darkMode}
+                        />
+                        <KpiBlock
+                            label="Agences" icon={Building2}
+                            value={stats?.agencies?.current || 0} change={stats?.agencies?.change || 0}
+                            emptyMsg="Aucune agence créée"
+                            darkMode={darkMode}
+                        />
+                        <KpiBlock
+                            label="Réservations en attente" icon={Clock}
+                            value={stats?.reservations?.current || 0} change={stats?.reservations?.change || 0}
+                            emptyMsg="Aucune réservation"
                             darkMode={darkMode}
                         />
                     </div>
                 </div>
 
-                {/* Premium Stats Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <StatCard
-                        title="Revenu Total"
-                        value={stats?.revenue?.current || 0}
-                        change={stats?.revenue?.change || 0}
-                        icon={DollarSign}
-                        prefix="$"
-                        gradient="from-green-500 to-emerald-600"
-                    />
-                    <StatCard
-                        title="Locations Actives"
-                        value={stats?.activeRentals?.current || 0}
-                        change={stats?.activeRentals?.change || 0}
-                        icon={Calendar}
-                        gradient="from-blue-500 to-indigo-600"
-                    />
-                    <StatCard
-                        title="Total Véhicules"
-                        value={stats?.totalVehicles?.current || 0}
-                        change={stats?.totalVehicles?.change || 0}
-                        icon={Car}
-                        gradient="from-cyan-500 to-blue-600"
-                    />
-                    <StatCard
-                        title="Total Clients"
-                        value={stats?.customers?.current || 0}
-                        change={stats?.customers?.change || 0}
-                        icon={Users}
-                        gradient="from-purple-500 to-pink-600"
-                    />
+                {/* ── ZONE 3: CHARTS ROW ── */}
+                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 24, marginBottom: 32 }}>
+
+                    {/* Revenue Trend */}
+                    <div style={{
+                        background: cardBg, border: `1px solid ${cardBorder}`,
+                        borderRadius: 16, padding: '24px',
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+                            <div>
+                                <h3 style={{ fontSize: 16, fontWeight: 600, color: textPrimary, margin: '0 0 2px' }}>Évolution des revenus</h3>
+                                <p style={{ fontSize: 12, color: textSecondary, margin: 0 }}>7 derniers jours</p>
+                            </div>
+                        </div>
+                        {revenueChart?.length > 0 ? (
+                            <ResponsiveContainer width="100%" height={220}>
+                                <AreaChart data={revenueChart} margin={{ top: 4, right: 4, bottom: 0, left: -16 }}>
+                                    <defs>
+                                        <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor={token.primary} stopOpacity={0.15} />
+                                            <stop offset="95%" stopColor={token.primary} stopOpacity={0} />
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid strokeDasharray="3 3" stroke={darkMode ? '#334155' : '#F1F5F9'} vertical={false} />
+                                    <XAxis dataKey="date" tick={{ fontSize: 12, fill: textSecondary }} axisLine={false} tickLine={false} />
+                                    <YAxis tick={{ fontSize: 12, fill: textSecondary }} axisLine={false} tickLine={false} />
+                                    <Tooltip content={<CustomTooltip darkMode={darkMode} />} />
+                                    <Area type="monotone" dataKey="revenue" stroke={token.primary} strokeWidth={2.5}
+                                        fill="url(#colorRev)" dot={false} activeDot={{ r: 5, fill: token.primary }} name="revenue" />
+                                </AreaChart>
+                            </ResponsiveContainer>
+                        ) : (
+                            <EmptyState
+                                message="Aucune donnée de revenu disponible pour le moment."
+                                cta="Créer une location"
+                                onCta={() => navigate('/director/rentals')}
+                            />
+                        )}
+                    </div>
+
+                    {/* Fleet Status */}
+                    <div style={{
+                        background: cardBg, border: `1px solid ${cardBorder}`,
+                        borderRadius: 16, padding: '24px',
+                    }}>
+                        <div style={{ marginBottom: 24 }}>
+                            <h3 style={{ fontSize: 16, fontWeight: 600, color: textPrimary, margin: '0 0 2px' }}>État de la flotte</h3>
+                            <p style={{ fontSize: 12, color: textSecondary, margin: 0 }}>Répartition par statut</p>
+                        </div>
+                        {vehicleStatus?.length > 0 ? (
+                            <>
+                                <ResponsiveContainer width="100%" height={160}>
+                                    <BarChart data={vehicleStatus} margin={{ top: 4, right: 4, bottom: 0, left: -24 }}>
+                                        <CartesianGrid strokeDasharray="3 3" stroke={darkMode ? '#334155' : '#F1F5F9'} vertical={false} />
+                                        <XAxis dataKey="name" tick={{ fontSize: 11, fill: textSecondary }} axisLine={false} tickLine={false} />
+                                        <YAxis tick={{ fontSize: 11, fill: textSecondary }} axisLine={false} tickLine={false} />
+                                        <Tooltip content={<CustomTooltip darkMode={darkMode} />} />
+                                        <Bar dataKey="value" fill={token.primary} radius={[6, 6, 0, 0]} />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 16 }}>
+                                    {vehicleStatus.map(item => (
+                                        <div key={item.name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                                <div style={{ width: 8, height: 8, borderRadius: '50%', background: item.color }} />
+                                                <span style={{ fontSize: 13, color: textSecondary }}>{item.name}</span>
+                                            </div>
+                                            <span style={{ fontSize: 13, fontWeight: 600, color: textPrimary }}>{item.value}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </>
+                        ) : (
+                            <EmptyState
+                                message="Ajoutez votre premier véhicule pour voir les statistiques de flotte."
+                                cta="Ajouter un véhicule"
+                                onCta={() => navigate('/director/fleet/new')}
+                            />
+                        )}
+                    </div>
                 </div>
 
-                {/* Advanced Widgets Row */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {/* Performance Overview */}
-                    <div className={`rounded-xl p-6 shadow-lg ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
-                        <h3 className={`text-lg font-bold mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                            Performance Globale
-                        </h3>
-                        <div className="space-y-4">
+                {/* ── ZONE 4: OPERATIONS + CLIENT ── */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 32 }}>
+
+                    {/* Operations - Recent Activity */}
+                    <div style={{
+                        background: cardBg, border: `1px solid ${cardBorder}`,
+                        borderRadius: 16, padding: '24px',
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
                             <div>
-                                <div className="flex justify-between mb-2">
-                                    <span className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                                        Taux d'Utilisation
-                                    </span>
-                                    <span className={`font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                                        78%
-                                    </span>
-                                </div>
-                                <div className="w-full bg-gray-200 rounded-full h-2">
-                                    <div className="bg-gradient-to-r from-cyan-500 to-blue-600 h-2 rounded-full" style={{ width: '78%' }}></div>
-                                </div>
+                                <h3 style={{ fontSize: 16, fontWeight: 600, color: textPrimary, margin: '0 0 2px' }}>Activité récente</h3>
+                                <p style={{ fontSize: 12, color: textSecondary, margin: 0 }}>Dernières locations</p>
                             </div>
-                            <div>
-                                <div className="flex justify-between mb-2">
-                                    <span className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                                        Satisfaction Client
-                                    </span>
-                                    <span className={`font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                                        92%
-                                    </span>
+                            <button onClick={() => navigate('/director/rentals')} style={{
+                                fontSize: 12, fontWeight: 600, color: token.primary,
+                                background: 'none', border: 'none', cursor: 'pointer',
+                                display: 'flex', alignItems: 'center', gap: 2,
+                            }}>
+                                Tout voir <ChevronRight size={13} />
+                            </button>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                            {recentRentals?.length > 0 ? recentRentals.slice(0, 5).map(rental => (
+                                <div key={rental.id} style={{
+                                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                    padding: '10px 12px', borderRadius: 10,
+                                    background: darkMode ? '#0F172A' : token.neutral50,
+                                    transition: 'background 150ms ease',
+                                }}
+                                    onMouseEnter={e => e.currentTarget.style.background = darkMode ? '#334155' : token.neutral100}
+                                    onMouseLeave={e => e.currentTarget.style.background = darkMode ? '#0F172A' : token.neutral50}
+                                >
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                        <div style={{
+                                            width: 34, height: 34, borderRadius: 10,
+                                            background: `${token.primary}18`,
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        }}>
+                                            <Car size={15} color={token.primary} />
+                                        </div>
+                                        <div>
+                                            <p style={{ fontSize: 13, fontWeight: 600, color: textPrimary, margin: 0 }}>{rental.customer}</p>
+                                            <p style={{ fontSize: 11, color: textSecondary, margin: 0 }}>{rental.vehicle} · {rental.date}</p>
+                                        </div>
+                                    </div>
+                                    <div style={{ textAlign: 'right' }}>
+                                        <p style={{ fontSize: 13, fontWeight: 700, color: textPrimary, margin: 0 }}>${rental.amount}</p>
+                                        <span style={{
+                                            fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em',
+                                            color: token.success, background: token.successLight,
+                                            borderRadius: 4, padding: '1px 6px',
+                                        }}>
+                                            {rental.status}
+                                        </span>
+                                    </div>
                                 </div>
-                                <div className="w-full bg-gray-200 rounded-full h-2">
-                                    <div className="bg-gradient-to-r from-green-500 to-emerald-600 h-2 rounded-full" style={{ width: '92%' }}></div>
-                                </div>
-                            </div>
-                            <div>
-                                <div className="flex justify-between mb-2">
-                                    <span className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                                        Paiements à Jour
-                                    </span>
-                                    <span className={`font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                                        95%
-                                    </span>
-                                </div>
-                                <div className="w-full bg-gray-200 rounded-full h-2">
-                                    <div className="bg-gradient-to-r from-yellow-500 to-amber-600 h-2 rounded-full" style={{ width: '95%' }}></div>
-                                </div>
-                            </div>
+                            )) : (
+                                <EmptyState
+                                    message="Aucune location récente — commencez par créer votre première réservation."
+                                    cta="Créer une location"
+                                    onCta={() => navigate('/director/rentals')}
+                                />
+                            )}
                         </div>
                     </div>
 
-                    {/* Revenue Chart */}
-                    <div className={`lg:col-span-2 rounded-xl p-6 shadow-lg ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
-                        <h3 className={`text-lg font-bold mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                            Évolution des Revenus
-                        </h3>
-                        <ResponsiveContainer width="100%" height={250}>
-                            <LineChart data={revenueChart}>
-                                <CartesianGrid strokeDasharray="3 3" stroke={darkMode ? '#374151' : '#e2e8f0'} />
-                                <XAxis dataKey="date" stroke={darkMode ? '#9ca3af' : '#64748b'} />
-                                <YAxis stroke={darkMode ? '#9ca3af' : '#64748b'} />
-                                <Tooltip
-                                    contentStyle={{
-                                        backgroundColor: darkMode ? '#1f2937' : '#fff',
-                                        border: `1px solid ${darkMode ? '#374151' : '#e2e8f0'}`,
-                                        borderRadius: '8px'
-                                    }}
-                                />
-                                <Legend />
-                                <Line
-                                    type="monotone"
-                                    dataKey="revenue"
-                                    stroke="url(#colorRevenue)"
-                                    strokeWidth={3}
-                                    dot={{ fill: '#3b82f6', r: 5 }}
-                                    name="Revenu ($)"
-                                />
-                                <defs>
-                                    <linearGradient id="colorRevenue" x1="0" y1="0" x2="1" y2="0">
-                                        <stop offset="0%" stopColor="#06b6d4" />
-                                        <stop offset="100%" stopColor="#3b82f6" />
-                                    </linearGradient>
-                                </defs>
-                            </LineChart>
-                        </ResponsiveContainer>
-                    </div>
-                </div>
+                    {/* Client satisfaction + Subscription */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-                {/* Charts Row */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {/* Vehicle Status */}
-                    <div className={`rounded-xl p-6 shadow-lg ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
-                        <h3 className={`text-lg font-bold mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                            État de la Flotte
-                        </h3>
-                        <ResponsiveContainer width="100%" height={300}>
-                            <PieChart>
-                                <Pie
-                                    data={vehicleStatus}
-                                    cx="50%"
-                                    cy="50%"
-                                    innerRadius={60}
-                                    outerRadius={100}
-                                    paddingAngle={5}
-                                    dataKey="value"
-                                >
-                                    {vehicleStatus?.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={entry.color} />
-                                    ))}
-                                </Pie>
-                                <Tooltip />
-                            </PieChart>
-                        </ResponsiveContainer>
-                    </div>
-
-                    {/* Payment Methods */}
-                    <div className={`rounded-xl p-6 shadow-lg ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
-                        <h3 className={`text-lg font-bold mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                            Méthodes de Paiement
-                        </h3>
-                        <ResponsiveContainer width="100%" height={300}>
-                            <BarChart data={paymentMethods}>
-                                <CartesianGrid strokeDasharray="3 3" stroke={darkMode ? '#374151' : '#e2e8f0'} />
-                                <XAxis dataKey="method" stroke={darkMode ? '#9ca3af' : '#64748b'} />
-                                <YAxis stroke={darkMode ? '#9ca3af' : '#64748b'} />
-                                <Tooltip
-                                    contentStyle={{
-                                        backgroundColor: darkMode ? '#1f2937' : '#fff',
-                                        border: `1px solid ${darkMode ? '#374151' : '#e2e8f0'}`,
-                                        borderRadius: '8px'
-                                    }}
-                                />
-                                <Bar dataKey="amount" fill="url(#colorBar)" radius={[8, 8, 0, 0]} />
-                                <defs>
-                                    <linearGradient id="colorBar" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="0%" stopColor="#3b82f6" />
-                                        <stop offset="100%" stopColor="#1e40af" />
-                                    </linearGradient>
-                                </defs>
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </div>
-                </div>
-
-                {/* Recent Activity */}
-                <div className={`rounded-xl p-6 shadow-lg ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
-                    <h3 className={`text-lg font-bold mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                        Activité Récente
-                    </h3>
-                    <div className="space-y-3">
-                        {recentRentals?.map((rental) => (
-                            <div
-                                key={rental.id}
-                                className={`flex items-center justify-between p-4 rounded-lg ${
-                                    darkMode ? 'bg-gray-700/50' : 'bg-gray-50'
-                                }`}
-                            >
-                                <div className="flex-1">
-                                    <p className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                                        {rental.customer}
-                                    </p>
-                                    <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                                        {rental.vehicle}
-                                    </p>
-                                </div>
-                                <div className="text-right">
-                                    <p className={`font-bold text-lg ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                                        ${rental.amount}
-                                    </p>
-                                    <span className="inline-block px-3 py-1 text-xs font-medium rounded-full bg-gradient-to-r from-green-500 to-emerald-600 text-white">
-                                        {rental.status}
-                                    </span>
-                                </div>
+                        {/* Performance metrics */}
+                        <div style={{
+                            background: cardBg, border: `1px solid ${cardBorder}`,
+                            borderRadius: 16, padding: '24px',
+                        }}>
+                            <h3 style={{ fontSize: 16, fontWeight: 600, color: textPrimary, margin: '0 0 20px' }}>
+                                Indicateurs clés
+                            </h3>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                                {[
+                                    { label: "Taux d'utilisation", value: 78, color: token.primary },
+                                    { label: "Satisfaction client", value: 92, color: token.success },
+                                    { label: "Paiements à jour", value: 95, color: token.warning },
+                                ].map(m => (
+                                    <div key={m.label}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                                            <span style={{ fontSize: 13, color: textSecondary }}>{m.label}</span>
+                                            <span style={{ fontSize: 13, fontWeight: 700, color: textPrimary }}>{m.value}%</span>
+                                        </div>
+                                        <div style={{
+                                            height: 6, background: darkMode ? '#334155' : token.neutral100,
+                                            borderRadius: 3, overflow: 'hidden',
+                                        }}>
+                                            <div style={{
+                                                height: '100%', width: `${m.value}%`,
+                                                background: m.color, borderRadius: 3,
+                                                transition: 'width 500ms ease',
+                                            }} />
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
-                        ))}
+                        </div>
+
+                        {/* Subscription counter */}
+                        <SubscriptionCounter
+                            endDate={enterprise?.subscription_end}
+                            status={enterprise?.subscription_status}
+                            billingPeriod={enterprise?.billing_period}
+                            plan={enterprise?.plan}
+                            darkMode={darkMode}
+                        />
                     </div>
                 </div>
+
             </div>
         </div>
     );

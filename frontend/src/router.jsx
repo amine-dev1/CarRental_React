@@ -13,6 +13,8 @@ import DirectorDashboard from "./pages/director/DirectorDashboard";
 import Fleet from "./pages/director/Fleet";
 import Customers from "./pages/director/Customers";
 import Rentals from "./pages/director/Rentals";
+import Agencies from "./pages/director/Agencies";
+import Reservations from "./pages/director/Reservations";
 
 import DirectorLayout from "./layouts/DirectorLayout";
 import LandingPage from "./pages/LandingPage";
@@ -54,6 +56,8 @@ export default function Router() {
                         <Route path="fleet" element={<Fleet />} />
                         <Route path="customers" element={<Customers />} />
                         <Route path="rentals" element={<Rentals />} />
+                        <Route path="agencies" element={<Agencies />} />
+                        <Route path="reservations" element={<Reservations />} />
                     </Route>
 
                     {/* Default redirect to login */}

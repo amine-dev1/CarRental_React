@@ -2,8 +2,9 @@ import { useState, useRef, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../auth/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
-import { Sun, Moon, Check, Sparkles, Zap, ArrowLeft, ArrowRight, Building2, User, Crown, CreditCard, CheckCircle } from "lucide-react";
+import { Sun, Moon, Check, Sparkles, Zap, ArrowLeft, ArrowRight, Building2, User, Crown, CreditCard, CheckCircle, Eye, EyeOff } from "lucide-react";
 import PhoneInput from "../../components/PhoneInput";
+import { CountrySelect, CitySelect } from "../../components/CountryCitySelect";
 import { showError } from "../../components/CustomToasts";
 import { api } from "../../api/http";
 import "../../pages/auth/login.css";
@@ -32,8 +33,8 @@ const PLANS = [
         id: "Pro",
         name: "Pro",
         monthlyPrice: 49,
-        yearlyPrice: 39.20,
-        yearlyTotal: 470.40,
+        yearlyPrice: 40,
+        yearlyTotal: 480,
         description: "Pour les agences en pleine croissance.",
         features: [
             "Jusqu'à 50 véhicules",
@@ -52,8 +53,8 @@ const PLANS = [
         id: "Enterprise",
         name: "Enterprise",
         monthlyPrice: 149,
-        yearlyPrice: 119.20,
-        yearlyTotal: 1430.40,
+        yearlyPrice: 120,
+        yearlyTotal: 1440,
         description: "Solution complète pour les grandes flottes.",
         features: [
             "Véhicules illimités",
@@ -79,6 +80,7 @@ export default function Register() {
     const initialStep = searchParams.get("success") === "true" ? 5 : (searchParams.get("step") ? parseInt(searchParams.get("step")) : 1);
     const [step, setStep] = useState(initialStep);
     const [loading, setLoading] = useState(false);
+    const [loadingMethod, setLoadingMethod] = useState(null); // 'stripe' or 'paypal'
 
     // Step 1 — Plan
     const [selectedPlan, setSelectedPlan] = useState(searchParams.get("plan") || "Pro");
@@ -88,6 +90,7 @@ export default function Register() {
     const [enterpriseName, setEnterpriseName] = useState("");
     const [registryNumber, setRegistryNumber] = useState("");
     const [country, setCountry] = useState("");
+    const [countryCode, setCountryCode] = useState(""); // ISO code for city lookup
     const [city, setCity] = useState("");
     const [enterpriseAddress, setEnterpriseAddress] = useState("");
     const [vatNumber, setVatNumber] = useState("");
@@ -99,6 +102,9 @@ export default function Register() {
     const [email, setEmail] = useState("");
     const [phone, setPhone] = useState("");
     const [password, setPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const directorPhoneRef = useRef(null);
 
     // After Registration details
@@ -177,6 +183,10 @@ export default function Register() {
             showError("Le mot de passe doit contenir au moins 6 caractères.");
             return;
         }
+        if (password !== confirmPassword) {
+            showError("Les mots de passe ne correspondent pas.");
+            return;
+        }
 
         if (selectedPlan === "Standard") {
             // For Standard plan, register directly (free, no payment)
@@ -241,6 +251,7 @@ export default function Register() {
 
     async function handleStripeCheckout() {
         setLoading(true);
+        setLoadingMethod('stripe');
         try {
             // Account is created AFTER payment via webhook
             const session = await api("/api/payments/register-checkout", {
@@ -253,11 +264,13 @@ export default function Register() {
             showError(err.response?.data?.error || "Erreur lors de la création de la session de paiement.");
         } finally {
             setLoading(false);
+            setLoadingMethod(null);
         }
     }
 
     async function handlePayPalCheckout() {
         setLoading(true);
+        setLoadingMethod('paypal');
         try {
             // Account is created AFTER payment via webhook
             const session = await api("/api/payments/register-paypal", {
@@ -274,6 +287,7 @@ export default function Register() {
             showError(err.response?.data?.error || "Erreur lors de la création de la souscription PayPal.");
         } finally {
             setLoading(false);
+            setLoadingMethod(null);
         }
     }
 
@@ -496,25 +510,24 @@ export default function Register() {
 
                                 <div className="space-y-1">
                                     <label className="text-xs font-semibold text-gray-600 dark:text-gray-300">Pays <span className="text-red-500">*</span></label>
-                                    <input
-                                        type="text"
-                                        placeholder="Ex: France"
-                                        required
-                                        className={inputClass}
+                                    <CountrySelect
                                         value={country}
-                                        onChange={(e) => setCountry(e.target.value)}
+                                        darkMode={darkMode}
+                                        onChange={(countryName, isoCode) => {
+                                            setCountry(countryName);
+                                            setCountryCode(isoCode);
+                                            setCity(""); // reset city when country changes
+                                        }}
                                     />
                                 </div>
 
                                 <div className="space-y-1">
                                     <label className="text-xs font-semibold text-gray-600 dark:text-gray-300">Ville <span className="text-red-500">*</span></label>
-                                    <input
-                                        type="text"
-                                        placeholder="Ex: Paris"
-                                        required
-                                        className={inputClass}
+                                    <CitySelect
+                                        countryCode={countryCode}
                                         value={city}
-                                        onChange={(e) => setCity(e.target.value)}
+                                        darkMode={darkMode}
+                                        onChange={(cityName) => setCity(cityName)}
                                     />
                                 </div>
 
@@ -590,14 +603,24 @@ export default function Register() {
 
                             <div className="space-y-1">
                                 <label className="text-xs font-semibold text-gray-600 dark:text-gray-300">Mot de passe <span className="text-red-500">*</span></label>
-                                <input
-                                    type="password"
-                                    placeholder="Min. 6 caractères"
-                                    required
-                                    className={inputClass}
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                />
+                                <div className="relative">
+                                    <input
+                                        type={showPassword ? "text" : "password"}
+                                        placeholder="Min. 6 caractères"
+                                        required
+                                        className={inputClass + " pr-10"}
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition cursor-pointer"
+                                        aria-label={showPassword ? "Masquer" : "Afficher"}
+                                    >
+                                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                                    </button>
+                                </div>
                                 {password && (
                                     <div className="flex items-center gap-2 mt-2 px-1">
                                         <div className={`h-1.5 w-full rounded-full ${strength.color}`}></div>
@@ -605,6 +628,34 @@ export default function Register() {
                                             {strength.label}
                                         </span>
                                     </div>
+                                )}
+                            </div>
+
+                            <div className="space-y-1">
+                                <label className="text-xs font-semibold text-gray-600 dark:text-gray-300">Confirmer le mot de passe <span className="text-red-500">*</span></label>
+                                <div className="relative">
+                                    <input
+                                        type={showConfirmPassword ? "text" : "password"}
+                                        placeholder="Répétez le mot de passe"
+                                        required
+                                        className={inputClass + " pr-10" + (confirmPassword && confirmPassword !== password ? " border border-red-400 dark:border-red-500" : confirmPassword && confirmPassword === password ? " border border-green-400 dark:border-green-500" : "")}
+                                        value={confirmPassword}
+                                        onChange={(e) => setConfirmPassword(e.target.value)}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition cursor-pointer"
+                                        aria-label={showConfirmPassword ? "Masquer" : "Afficher"}
+                                    >
+                                        {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                                    </button>
+                                </div>
+                                {confirmPassword && confirmPassword !== password && (
+                                    <p className="text-[10px] text-red-500 mt-1 px-1">Les mots de passe ne correspondent pas.</p>
+                                )}
+                                {confirmPassword && confirmPassword === password && (
+                                    <p className="text-[10px] text-green-500 mt-1 px-1">✓ Les mots de passe correspondent.</p>
                                 )}
                             </div>
 
@@ -679,7 +730,7 @@ export default function Register() {
                                         disabled={loading}
                                         className="w-full bg-[#635BFF] hover:bg-[#524ae3] text-white rounded-xl py-3 font-bold shadow-lg hover:shadow-[#635BFF]/30 hover:scale-[1.02] transition-all flex items-center justify-center gap-2 text-sm"
                                     >
-                                        {loading ? "Chargement..." : `Payer via Stripe`}
+                                        {loadingMethod === 'stripe' ? "Chargement..." : `Payer via Stripe`}
                                     </button>
 
                                     <button
@@ -687,7 +738,7 @@ export default function Register() {
                                         disabled={loading}
                                         className="w-full bg-[#FFC439] hover:bg-[#F4B938] text-[#003087] rounded-xl py-3 font-bold shadow-lg hover:shadow-[#FFC439]/30 hover:scale-[1.02] transition-all flex items-center justify-center gap-2 text-sm"
                                     >
-                                        {loading ? "Chargement..." : `Payer via PayPal`}
+                                        {loadingMethod === 'paypal' ? "Chargement..." : `Payer via PayPal`}
                                     </button>
                                 </div>
                                 <p className="text-center text-[10px] text-gray-400 mt-3 flex items-center justify-center gap-1.5">

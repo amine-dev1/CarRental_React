@@ -1,6 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { Clock, AlertTriangle, ShieldCheck } from 'lucide-react';
 
+const token = {
+    primary: '#6366F1',
+    primaryLight: '#EEF2FF',
+    primaryBorder: '#C7D2FE',
+    success: '#10B981',
+    successLight: '#ECFDF5',
+    warning: '#F59E0B',
+    warningLight: '#FFFBEB',
+    danger: '#EF4444',
+    dangerLight: '#FEF2F2',
+    neutral50: '#F8FAFC',
+    neutral100: '#F1F5F9',
+    neutral200: '#E2E8F0',
+    neutral400: '#94A3B8',
+    neutral600: '#475569',
+    neutral900: '#0F172A',
+    dark800: '#1E293B',
+    dark900: '#0F172A',
+};
+
 const SubscriptionCounter = ({ endDate, status, billingPeriod, plan, darkMode }) => {
     const [timeLeft, setTimeLeft] = useState(null);
 
@@ -37,73 +57,88 @@ const SubscriptionCounter = ({ endDate, status, billingPeriod, plan, darkMode })
 
     const isExpiringSoon = timeLeft.days < 7 && !timeLeft.expired;
 
+    const bgState = timeLeft.expired 
+        ? (darkMode ? '#1E293B' : token.dangerLight)
+        : isExpiringSoon 
+            ? (darkMode ? '#1E293B' : token.warningLight)
+            : (darkMode ? '#1E293B' : '#fff');
+
+    const borderState = timeLeft.expired 
+        ? (darkMode ? '#475569' : '#FECACA')
+        : isExpiringSoon 
+            ? (darkMode ? '#475569' : '#FDE68A')
+            : (darkMode ? '#334155' : token.neutral200);
+
+    const iconColor = timeLeft.expired ? token.danger : isExpiringSoon ? token.warning : token.primary;
+    const IconCmp = timeLeft.expired ? AlertTriangle : isExpiringSoon ? Clock : ShieldCheck;
+
     return (
-        <div className={`rounded-2xl p-4 shadow-sm border ${
-            timeLeft.expired 
-                ? 'bg-red-50 border-red-200 dark:bg-red-500/10 dark:border-red-500/20' 
-                : isExpiringSoon 
-                    ? 'bg-amber-50 border-amber-200 dark:bg-amber-500/10 dark:border-amber-500/20'
-                    : 'bg-blue-50 border-blue-200 dark:bg-blue-500/10 dark:border-blue-500/20'
-            }`}>
-            <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                    {timeLeft.expired ? (
-                        <AlertTriangle className="text-red-500" size={20} />
-                    ) : isExpiringSoon ? (
-                        <Clock className="text-amber-500" size={20} />
-                    ) : (
-                        <ShieldCheck className="text-blue-500" size={20} />
-                    )}
-                    <span className={`font-bold text-sm ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                        Statut de l'abonnement : {plan}
+        <div style={{
+            background: bgState,
+            border: `1px solid ${borderState}`,
+            borderRadius: 16, padding: '24px',
+        }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{
+                        width: 32, height: 32, borderRadius: 8,
+                        background: `${iconColor}15`,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                        <IconCmp size={16} color={iconColor} />
+                    </div>
+                    <span style={{ fontSize: 14, fontWeight: 600, color: darkMode ? '#F1F5F9' : token.neutral900 }}>
+                        Abonnement : {plan}
                     </span>
                 </div>
-                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
-                    status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                }`}>
+                <span style={{
+                    fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 6, textTransform: 'uppercase', letterSpacing: '0.05em',
+                    background: status === 'active' ? (darkMode ? '#064E3B' : token.successLight) : (darkMode ? '#7F1D1D' : token.dangerLight),
+                    color: status === 'active' ? (darkMode ? '#34D399' : token.success) : (darkMode ? '#FCA5A5' : token.danger),
+                    border: `1px solid ${status === 'active' ? (darkMode ? '#059669' : '#A7F3D0') : (darkMode ? '#DC2626' : '#FECACA')}`
+                }}>
                     {status}
                 </span>
             </div>
 
             {timeLeft.expired ? (
-                <div className="text-center py-2">
-                    <p className="text-red-600 dark:text-red-400 font-bold text-sm">Abonnement expiré</p>
-                    <p className="text-[10px] text-gray-500 mt-1">Veuillez renouveler votre abonnement pour continuer à utiliser toutes les fonctionnalités.</p>
+                <div style={{ textAlign: 'center', padding: '16px 0' }}>
+                    <p style={{ color: token.danger, fontWeight: 700, fontSize: 14, margin: '0 0 4px' }}>Abonnement expiré</p>
+                    <p style={{ fontSize: 12, color: token.neutral400, margin: 0 }}>Veuillez renouveler votre abonnement pour continuer.</p>
                 </div>
             ) : (
-                <div className="flex items-center justify-around">
-                    <div className="text-center">
-                        <div className={`text-xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>{timeLeft.days}</div>
-                        <div className="text-[9px] text-gray-500 uppercase font-semibold">Jours</div>
-                    </div>
-                    <div className="text-gray-300 dark:text-gray-700 text-xl font-light">:</div>
-                    <div className="text-center">
-                        <div className={`text-xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>{timeLeft.hours}</div>
-                        <div className="text-[9px] text-gray-500 uppercase font-semibold">Heures</div>
-                    </div>
-                    <div className="text-gray-300 dark:text-gray-700 text-xl font-light">:</div>
-                    <div className="text-center">
-                        <div className={`text-xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>{timeLeft.minutes}</div>
-                        <div className="text-[9px] text-gray-500 uppercase font-semibold">Min</div>
-                    </div>
-                    <div className="text-gray-300 dark:text-gray-700 text-xl font-light">:</div>
-                    <div className="text-center">
-                        <div className={`text-xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>{timeLeft.seconds}</div>
-                        <div className="text-[9px] text-gray-500 uppercase font-semibold">Sec</div>
-                    </div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 8px' }}>
+                    {[
+                        { label: 'Jours', value: timeLeft.days },
+                        { label: 'Heures', value: timeLeft.hours },
+                        { label: 'Min', value: timeLeft.minutes },
+                        { label: 'Sec', value: timeLeft.seconds }
+                    ].map((item, i) => (
+                        <React.Fragment key={item.label}>
+                            <div style={{ textAlign: 'center' }}>
+                                <div style={{ fontSize: 24, fontWeight: 800, color: darkMode ? '#F1F5F9' : token.neutral900, lineHeight: 1.2 }}>
+                                    {item.value}
+                                </div>
+                                <div style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', color: token.neutral400, letterSpacing: '0.05em' }}>
+                                    {item.label}
+                                </div>
+                            </div>
+                            {i < 3 && <div style={{ fontSize: 20, fontWeight: 300, color: darkMode ? '#475569' : token.neutral200 }}>:</div>}
+                        </React.Fragment>
+                    ))}
                 </div>
             )}
 
-            <div className="mt-4 pt-3 border-t border-gray-200 dark:border-white/10">
-                <p className="text-[10px] text-gray-500 flex justify-between">
-                    <span>Prochain renouvellement :</span>
-                    <span className="font-bold text-gray-700 dark:text-gray-300">
+            <div style={{ marginTop: 24, paddingTop: 16, borderTop: `1px solid ${darkMode ? '#334155' : token.neutral100}` }}>
+                <p style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: token.neutral400, margin: '0 0 8px' }}>
+                    <span>Prochain renouvellement</span>
+                    <span style={{ fontWeight: 600, color: darkMode ? '#CBD5E1' : token.neutral600 }}>
                         {new Date(endDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
                     </span>
                 </p>
-                <p className="text-[10px] text-gray-500 flex justify-between mt-1">
-                    <span>Cycle de paiement :</span>
-                    <span className="font-bold text-gray-700 dark:text-gray-300 capitalize">
+                <p style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: token.neutral400, margin: 0 }}>
+                    <span>Cycle de paiement</span>
+                    <span style={{ fontWeight: 600, color: darkMode ? '#CBD5E1' : token.neutral600, textTransform: 'capitalize' }}>
                         {billingPeriod === 'yearly' ? 'Annuel' : 'Mensuel'}
                     </span>
                 </p>

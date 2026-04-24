@@ -35,8 +35,8 @@ const Pricing = () => {
         {
             name: "Pro",
             monthlyPrice: 49,
-            yearlyPrice: 39.20,
-            yearlyTotal: 470.40,
+            yearlyPrice: 40,
+            yearlyTotal: 480,
             description: "Pour les agences en pleine croissance.",
             features: [
                 "Jusqu'à 50 véhicules",
@@ -57,8 +57,8 @@ const Pricing = () => {
         {
             name: "Enterprise",
             monthlyPrice: 149,
-            yearlyPrice: 119.20,
-            yearlyTotal: 1430.40,
+            yearlyPrice: 120,
+            yearlyTotal: 1440,
             description: "Solution complète pour les grandes flottes.",
             features: [
                 "Véhicules illimités",

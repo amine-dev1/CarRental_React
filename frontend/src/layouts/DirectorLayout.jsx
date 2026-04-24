@@ -13,7 +13,12 @@ import {
     Briefcase,
     Sun,
     Moon,
-    User
+    User,
+    ChevronLeft,
+    PanelLeftClose,
+    PanelLeftOpen,
+    Building2,
+    BookOpen
 } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
 
@@ -22,6 +27,7 @@ export default function DirectorLayout() {
     const { darkMode, toggleDarkMode } = useTheme();
     const navigate = useNavigate();
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [isCollapsed, setIsCollapsed] = useState(false);
 
     function handleLogout() {
         logout();
@@ -41,38 +47,65 @@ export default function DirectorLayout() {
             {/* Sidebar */}
             {/* Sidebar */}
             <aside className={`
-                fixed inset-y-0 left-0 z-50 w-80 bg-[#0B1220] border-r border-white/5 p-6 flex flex-col transition-all duration-300 lg:static lg:translate-x-0
-                ${sidebarOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"}
+                fixed inset-y-0 left-0 z-50 bg-[#0F172A] border-r border-[#1E293B] flex flex-col transition-all duration-300 lg:static lg:translate-x-0
+                ${sidebarOpen ? "translate-x-0 shadow-2xl w-80 p-6" : "-translate-x-full w-80 p-6"}
+                ${isCollapsed ? "lg:w-[90px] lg:px-4 lg:py-6" : "lg:w-80 lg:p-6"}
             `}>
                 {/* Logo Section */}
-                <div className="flex items-center justify-between mb-12">
+                <div className={`flex items-center mb-12 ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
                     <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-secondary rounded-2xl flex items-center justify-center text-white shadow-lg shadow-secondary/30">
-                            <Briefcase size={24} strokeWidth={2.5} />
+                        <div className="w-10 h-10 bg-[#1E293B] rounded-xl flex items-center justify-center text-[#6366F1] shadow-sm flex-shrink-0">
+                            <Briefcase size={20} strokeWidth={2.5} />
                         </div>
-                        <div className="flex flex-col">
-                            <span className="text-xl font-bold text-white tracking-tight">
-                                Directeur
-                            </span>
-                            <span className="text-xs text-[#E5E7EB] font-medium opacity-80">
-                                Console de gestion
-                            </span>
-                        </div>
+                        {!isCollapsed && (
+                            <div className="flex flex-col overflow-hidden whitespace-nowrap transition-all duration-300 opacity-100">
+                                <span className="text-lg font-bold text-[#F8FAFC] tracking-tight">
+                                    Directeur
+                                </span>
+                                <span className="text-xs text-[#94A3B8] font-medium">
+                                    Console de gestion
+                                </span>
+                            </div>
+                        )}
                     </div>
+                    {/* Mobile Close Button */}
                     <button
                         onClick={() => setSidebarOpen(false)}
                         className="lg:hidden p-2 text-[#94A3B8] hover:text-white hover:bg-white/10 rounded-lg transition-all"
                     >
                         <X size={20} />
                     </button>
+                    {/* Desktop Collapse Button */}
+                    {!isCollapsed && (
+                        <button
+                            onClick={() => setIsCollapsed(true)}
+                            className="hidden lg:flex p-1.5 text-[#94A3B8] hover:text-white hover:bg-white/10 rounded-lg transition-all"
+                            title="Réduire le menu"
+                        >
+                            <PanelLeftClose size={20} />
+                        </button>
+                    )}
                 </div>
+
+                {/* If collapsed, show open button */}
+                {isCollapsed && (
+                     <button
+                        onClick={() => setIsCollapsed(false)}
+                        className="hidden lg:flex absolute -right-3 top-8 w-6 h-6 bg-[#1E293B] border border-[#0F172A] rounded-full items-center justify-center text-[#94A3B8] hover:text-white transition-all shadow-md z-50"
+                        title="Agrandir le menu"
+                    >
+                        <ChevronRight size={14} />
+                    </button>
+                )}
 
                 {/* Navigation */}
                 <nav className="space-y-2 flex-1">
                     {[
                         { to: "/director", label: "Tableau de bord", icon: <LayoutDashboard size={20} /> },
                         { to: "/director/fleet", label: "Gestion de la flotte", icon: <Car size={20} /> },
+                        { to: "/director/agencies", label: "Agences", icon: <Building2 size={20} /> },
                         { to: "/director/customers", label: "Clients", icon: <Users size={20} /> },
+                        { to: "/director/reservations", label: "Réservations", icon: <BookOpen size={20} /> },
                         { to: "/director/rentals", label: "Locations", icon: <CalendarRange size={20} /> },
                     ].map(({ to, label, icon }) => (
                         <NavLink
@@ -81,39 +114,47 @@ export default function DirectorLayout() {
                             end={to === "/director"}
                             onClick={() => setSidebarOpen(false)}
                             className={({ isActive }) =>
-                                `group flex items-center justify-between rounded-xl px-4 py-3.5 font-medium transition-all duration-250 ${
-                                    isActive
-                                        ? "bg-[#2563EB] text-white shadow-sm"
-                                        : "text-[#94A3B8] hover:bg-white/5 hover:text-white"
+                                `group flex items-center justify-between rounded-xl font-medium transition-all duration-200 
+                                ${isCollapsed ? 'p-3 justify-center' : 'px-4 py-3'} 
+                                ${isActive
+                                    ? "bg-[#1E293B] text-[#F8FAFC]"
+                                    : "text-[#CBD5E1] hover:bg-white/5 hover:text-[#F8FAFC]"
                                 }`
                             }
+                            title={isCollapsed ? label : undefined}
                         >
-                            <div className="flex items-center gap-3">
-                                {icon}
-                                <span>{label}</span>
+                            <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'}`}>
+                                <div className="flex-shrink-0">{icon}</div>
+                                {!isCollapsed && <span className="whitespace-nowrap transition-opacity duration-300">{label}</span>}
                             </div>
-                            <ChevronRight
-                                size={16}
-                                className="opacity-0 group-hover:opacity-100 transition-opacity"
-                            />
+                            {!isCollapsed && (
+                                <ChevronRight
+                                    size={16}
+                                    className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                />
+                            )}
                         </NavLink>
                     ))}
                 </nav>
 
                 {/* Logout Button */}
-                <div className="pt-4 border-t border-black/10">
+                <div className={`pt-4 border-t border-black/10 mt-auto ${isCollapsed ? 'flex justify-center' : ''}`}>
                     <button
                         onClick={handleLogout}
-                        className="group flex items-center justify-between w-full rounded-xl px-4 py-3.5 font-medium text-[#94A3B8] hover:bg-error/10 hover:text-error transition-all duration-250"
+                        className={`group flex items-center justify-between rounded-xl font-medium text-[#94A3B8] hover:bg-red-500/10 hover:text-red-500 transition-all duration-250 
+                        ${isCollapsed ? 'p-3 w-auto' : 'px-4 py-3.5 w-full'}`}
+                        title={isCollapsed ? "Déconnexion" : undefined}
                     >
-                        <div className="flex items-center gap-3">
-                            <LogOut size={20} strokeWidth={2} />
-                            <span>Déconnexion</span>
+                        <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'}`}>
+                            <div className="flex-shrink-0"><LogOut size={20} strokeWidth={2} /></div>
+                            {!isCollapsed && <span className="whitespace-nowrap transition-opacity duration-300">Déconnexion</span>}
                         </div>
-                        <ChevronRight
-                            size={16}
-                            className="opacity-0 group-hover:opacity-100 transition-opacity"
-                        />
+                        {!isCollapsed && (
+                            <ChevronRight
+                                size={16}
+                                className="opacity-0 group-hover:opacity-100 transition-opacity"
+                            />
+                        )}
                     </button>
                 </div>
             </aside>

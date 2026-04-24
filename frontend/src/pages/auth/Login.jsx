@@ -3,7 +3,7 @@ import { showError } from "../../components/CustomToasts";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
-import { Sun, Moon } from "lucide-react";
+import { Sun, Moon, Eye, EyeOff } from "lucide-react";
 import "../../pages/auth/login.css";
 
 import logo from "../../assets/logo-blue.png";
@@ -17,6 +17,7 @@ export default function Login() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
 
     async function handleSubmit(e) {
         e.preventDefault();
@@ -94,15 +95,23 @@ export default function Login() {
                             />
                         </div>
 
-                        <div className="mb-4">
+                        <div className="mb-4 relative">
                             <input
-                                type="password"
+                                type={showPassword ? "text" : "password"}
                                 placeholder="Mot de passe"
                                 required
-                                className="input-focus w-full rounded-xl bg-gray-100 dark:bg-white/[0.06] dark:border dark:border-white/[0.1] px-5 py-3 placeholder-gray-500 dark:placeholder-gray-500 transition text-gray-900 dark:text-white"
+                                className="input-focus w-full rounded-xl bg-gray-100 dark:bg-white/[0.06] dark:border dark:border-white/[0.1] px-5 py-3 pr-12 placeholder-gray-500 dark:placeholder-gray-500 transition text-gray-900 dark:text-white"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                             />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition cursor-pointer"
+                                aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                            >
+                                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                            </button>
                         </div>
 
                         <div className="mb-6 text-right">
@@ -127,6 +136,19 @@ export default function Login() {
                             <p className="mt-4 text-center text-xs text-gray-400 dark:text-gray-500">
                                 🔒 Accès sécurisé réservé aux utilisateurs autorisés
                             </p>
+
+                            <div className="mt-8 border-t border-gray-100 dark:border-white/5 pt-6 text-center">
+                                <p className="text-sm text-gray-600 dark:text-gray-400">
+                                    Nouveau utilisateur ?{" "}
+                                    <button
+                                        type="button"
+                                        onClick={() => navigate("/register")}
+                                        className="text-orange-500 dark:text-orange-400 hover:underline font-semibold cursor-pointer"
+                                    >
+                                        S&apos;enregistrer
+                                    </button>
+                                </p>
+                            </div>
                         </div>
                     </form>
                 </div>

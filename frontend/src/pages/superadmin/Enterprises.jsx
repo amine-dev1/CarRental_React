@@ -25,6 +25,7 @@ import {
 import { useTheme } from "../../context/ThemeContext";
 import { useAuth } from "../../auth/AuthContext";
 import CustomSelect from "../../components/common/CustomSelect";
+import { CountrySelect, CitySelect } from "../../components/CountryCitySelect";
 
 function StatusBadge({ status = "active" }) {
     const s = String(status).toLowerCase();
@@ -90,6 +91,9 @@ export default function Enterprises() {
     const [form, setForm] = useState({
         name: "",
         address: "",
+        country: "",
+        countryCode: "",
+        city: "",
         plan: "Standard",
         status: "active",
     });
@@ -141,13 +145,15 @@ export default function Enterprises() {
                 body: {
                     name: form.name.trim(),
                     address: form.address,
+                    country: form.country || undefined,
+                    city: form.city || undefined,
                     plan: form.plan,
                     status: form.status
                 },
             });
 
             setEnterprises((prev) => [created, ...prev]);
-            setForm({ name: "", address: "", plan: "Standard", status: "active" });
+            setForm({ name: "", address: "", country: "", countryCode: "", city: "", plan: "Standard", status: "active" });
             setShowCreate(false);
 
             showSuccess("L'entreprise a été créée avec succès.");
@@ -384,6 +390,32 @@ export default function Enterprises() {
                                                     : 'bg-white border-[#E2E8F0] focus:border-[#3B82F6] hover:border-[#CBD5E1] focus:ring-[3px] focus:ring-blue-500/10'
                                                 }
                                             `}
+                                        />
+                                    </div>
+
+                                    {/* Country + City */}
+                                    <div className="space-y-2">
+                                        <label className="flex text-[13px] font-semibold text-[#94A3B8] uppercase tracking-wide">
+                                            Pays
+                                        </label>
+                                        <CountrySelect
+                                            value={form.country}
+                                            darkMode={darkMode}
+                                            onChange={(countryName, isoCode) =>
+                                                setForm((p) => ({ ...p, country: countryName, countryCode: isoCode, city: "" }))
+                                            }
+                                        />
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="flex text-[13px] font-semibold text-[#94A3B8] uppercase tracking-wide">
+                                            Ville
+                                        </label>
+                                        <CitySelect
+                                            countryCode={form.countryCode}
+                                            value={form.city}
+                                            darkMode={darkMode}
+                                            onChange={(cityName) => setForm((p) => ({ ...p, city: cityName }))}
                                         />
                                     </div>
 

@@ -17,6 +17,12 @@ const PLAN_LIMITS = {
     Enterprise: { max_vehicles: 999999, max_users: 999999 },
 };
 
+function safeDate(val) {
+    if (!val) return null;
+    const d = new Date(val);
+    return isNaN(d.getTime()) ? null : d;
+}
+
 // ─── Helper: create enterprise+user after payment success ───
 async function createAccountAfterPayment({ registrationData, planInfo, billing_period, gateway, gateway_subscription_id, gateway_customer_id, subscription_end }) {
     const { full_name, email, phone, password_hash, enterprise_name, enterprise_address, registry_number, country, city, vat_number, enterprise_phone, plan } = registrationData;
@@ -32,21 +38,54 @@ async function createAccountAfterPayment({ registrationData, planInfo, billing_p
     try {
         await client.query('BEGIN');
 
-        const entResult = await client.query(
-            `INSERT INTO enterprises(name, address, registry_number, country, city, vat_number, enterprise_phone, plan, status, subscription_status, billing_period, max_vehicles, max_users, gateway_subscription_id, payment_gateway, gateway_customer_id, subscription_end)
-             VALUES($1,$2,$3,$4,$5,$6,$7,$8,'active','active',$9,$10,$11,$12,$13,$14,$15)
-             RETURNING *`,
-            [enterprise_name, enterprise_address||null, registry_number||null, country||null, city||null, vat_number||null, enterprise_phone||null,
-             planInfo.plan, billing_period, planInfo.max_vehicles, planInfo.max_users,
-             gateway_subscription_id||null, gateway, gateway_customer_id||null, subscription_end||null]
+        // Idempotency check: see if enterprise already exists with this gateway ID
+        let enterprise;
+        const existingEnt = await client.query(
+            `SELECT * FROM enterprises WHERE gateway_customer_id = $1 OR (gateway_subscription_id = $2 AND gateway_subscription_id IS NOT NULL)`,
+            [gateway_customer_id, gateway_subscription_id]
         );
-        const enterprise = entResult.rows[0];
 
+        if (existingEnt.rows[0]) {
+            enterprise = existingEnt.rows[0];
+            // Update the existing enterprise instead of failing
+            await client.query(
+                `UPDATE enterprises 
+                 SET plan = $1, status = 'active', subscription_status = 'active', billing_period = $2, 
+                     max_vehicles = $3, max_users = $4, gateway_subscription_id = $5, 
+                     payment_gateway = $6, subscription_end = $7
+                 WHERE id = $8`,
+                [planInfo.plan, billing_period, planInfo.max_vehicles, planInfo.max_users, 
+                 gateway_subscription_id, gateway, safeDate(subscription_end), enterprise.id]
+            );
+        } else {
+            const entResult = await client.query(
+                `INSERT INTO enterprises(name, address, registry_number, country, city, vat_number, enterprise_phone, plan, status, subscription_status, billing_period, max_vehicles, max_users, gateway_subscription_id, payment_gateway, gateway_customer_id, subscription_end)
+                 VALUES($1,$2,$3,$4,$5,$6,$7,$8,'active','active',$9,$10,$11,$12,$13,$14,$15)
+                 RETURNING *`,
+                [enterprise_name, enterprise_address||null, registry_number||null, country||null, city||null, vat_number||null, enterprise_phone||null,
+                 planInfo.plan, billing_period, planInfo.max_vehicles, planInfo.max_users,
+                 gateway_subscription_id||null, gateway, gateway_customer_id||null, safeDate(subscription_end)]
+            );
+            enterprise = entResult.rows[0];
+        }
+
+        const existingUser = await client.query(`SELECT id FROM users WHERE email = $1`, [email]);
+        if (!existingUser.rows[0]) {
+            await client.query(
+                `INSERT INTO users(enterprise_id, email, phone, full_name, password_hash, role)
+                 VALUES($1, $2, $3, $4, $5, 'director')`,
+                [enterprise.id, email, phone, full_name, password_hash]
+            );
+        } else {
+            // Update existing director if needed
+            await client.query(
+                `UPDATE users SET enterprise_id = $1, role = 'director' WHERE id = $2`,
+                [enterprise.id, existingUser.rows[0].id]
+            );
+        }
         const userResult = await client.query(
-            `INSERT INTO users(enterprise_id, email, phone, full_name, password_hash, role)
-             VALUES($1,$2,$3,$4,$5,'director')
-             RETURNING id, email, role, full_name, enterprise_id`,
-            [enterprise.id, email, phone||null, full_name, password_hash]
+            `SELECT id, email, role, full_name, enterprise_id FROM users WHERE email = $1`,
+            [email]
         );
         const user = userResult.rows[0];
 
@@ -252,8 +291,16 @@ r.post("/register-checkout", async (req, res) => {
 
         const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
 
-        // Store ALL registration data as Stripe metadata so webhook can create the account
-        const registrationMeta = JSON.stringify({ full_name, email, phone: phone||null, password_hash, enterprise_name, enterprise_address: enterprise_address||null, registry_number: registry_number||null, country: country||null, city: city||null, vat_number: vat_number||null, enterprise_phone: enterprise_phone||null, plan });
+        // ✅ FIX: Store registration data in DB (Stripe metadata limit is 500 chars per key)
+        // Using same approach as PayPal — pending_registrations table
+        const pendingResult = await query(
+            `INSERT INTO pending_registrations(email, data)
+             VALUES($1,$2)
+             ON CONFLICT(email) DO UPDATE SET data=$2, created_at=now()
+             RETURNING id`,
+            [email, JSON.stringify({ full_name, email, phone: phone||null, password_hash, enterprise_name, enterprise_address: enterprise_address||null, registry_number: registry_number||null, country: country||null, city: city||null, vat_number: vat_number||null, enterprise_phone: enterprise_phone||null, plan })]
+        );
+        const pendingId = pendingResult.rows[0].id;
 
         // Create Stripe customer first
         const customer = await stripe.customers.create({
@@ -269,9 +316,10 @@ r.post("/register-checkout", async (req, res) => {
             mode: 'subscription',
             success_url: `${frontendUrl}/register?success=true&gateway=stripe&session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: `${frontendUrl}/register?step=4`,
-            metadata: { registration_data: registrationMeta, payment_gateway: 'stripe' },
+            // Only store the short pending ID — not the full JSON (Stripe limit: 500 chars/key)
+            metadata: { pending_id: String(pendingId), payment_gateway: 'stripe' },
             subscription_data: {
-                metadata: { registration_data: registrationMeta, payment_gateway: 'stripe' }
+                metadata: { pending_id: String(pendingId), payment_gateway: 'stripe' }
             }
         });
 
@@ -281,6 +329,7 @@ r.post("/register-checkout", async (req, res) => {
         res.status(500).json({ error: 'Failed to create checkout session' });
     }
 });
+
 
 // ═══════════════════════════════════════
 //  POST /register-paypal (PAYPAL — Public, pre-registration)
@@ -605,7 +654,32 @@ r.post("/webhook", async (req, res) => {
 
                 const billingPeriod = planInfo.billing_period;
 
-                // Case 1: NEW registration (registration_data in metadata)
+                // Case 1: NEW registration — read from pending_registrations DB (pending_id in metadata)
+                const pendingId = session.metadata?.pending_id;
+                if (pendingId) {
+                    const pending = await query(`SELECT data FROM pending_registrations WHERE id=$1`, [pendingId]);
+                    if (pending.rows[0]) {
+                        try {
+                            const data = pending.rows[0].data;
+                            const registrationData = typeof data === 'string' ? JSON.parse(data) : data;
+                            await createAccountAfterPayment({
+                                registrationData,
+                                planInfo,
+                                billing_period: billingPeriod,
+                                gateway: 'stripe',
+                                gateway_subscription_id: subscriptionId,
+                                gateway_customer_id: session.customer,
+                                subscription_end: safeDate(subscription.current_period_end * 1000)
+                            });
+                            await query(`DELETE FROM pending_registrations WHERE id=$1`, [pendingId]);
+                        } catch(e) {
+                            console.error('Failed to create account from Stripe webhook:', e);
+                        }
+                    }
+                    break;
+                }
+
+                // Legacy fallback: registration_data in metadata (old sessions)
                 const rawRegData = session.metadata?.registration_data;
                 if (rawRegData) {
                     try {
@@ -620,7 +694,7 @@ r.post("/webhook", async (req, res) => {
                             subscription_end: new Date(subscription.current_period_end * 1000)
                         });
                     } catch(e) {
-                        console.error('Failed to create account from Stripe webhook:', e);
+                        console.error('Failed to create account from Stripe webhook (legacy):', e);
                     }
                     break;
                 }
@@ -715,7 +789,8 @@ r.post("/webhook/paypal", async (req, res) => {
                     const pending = await query(`SELECT data FROM pending_registrations WHERE id=$1`, [pendingId]);
                     if (pending.rows[0]) {
                         try {
-                            const registrationData = JSON.parse(pending.rows[0].data);
+                            const data = pending.rows[0].data;
+                            const registrationData = typeof data === 'string' ? JSON.parse(data) : data;
                             await createAccountAfterPayment({
                                 registrationData,
                                 planInfo,
@@ -723,7 +798,7 @@ r.post("/webhook/paypal", async (req, res) => {
                                 gateway: 'paypal',
                                 gateway_subscription_id: subscription.id,
                                 gateway_customer_id: subscription.subscriber?.payer_id || null,
-                                subscription_end: subscription.billing_info?.next_billing_time ? new Date(subscription.billing_info.next_billing_time) : null
+                                subscription_end: safeDate(subscription.billing_info?.next_billing_time)
                             });
                             await query(`DELETE FROM pending_registrations WHERE id=$1`, [pendingId]);
                         } catch(e) {
@@ -830,18 +905,15 @@ r.post("/verify-session", async (req, res) => {
             return res.status(400).json({ error: "Payment not completed or not a subscription" });
         }
 
-        // Check for registration_data in metadata (new user registration flow)
-        const rawRegData = session.metadata?.registration_data;
-        if (!rawRegData) {
-            // This is an existing user upgrade, not a new registration
-            return res.json({ ok: true, message: "Existing user upgrade — processed via webhook." });
-        }
-
-        const registrationData = JSON.parse(rawRegData);
-
-        // Check if account already exists (idempotency — webhook may have already created it)
-        const existingUser = await query(`SELECT id FROM users WHERE email=$1`, [registrationData.email]);
-        if (existingUser.rows[0]) {
+        // ── GLOBAL IDEMPOTENCY: check if enterprise already exists for this Stripe customer ──
+        const existingEntByCustomer = await query(
+            `SELECT e.id, u.email FROM enterprises e LEFT JOIN users u ON u.enterprise_id = e.id AND u.role = 'director' WHERE e.gateway_customer_id = $1`,
+            [session.customer]
+        );
+        if (existingEntByCustomer.rows[0]) {
+            // Enterprise + director already exist — clean up pending if any
+            const pendingId = session.metadata?.pending_id;
+            if (pendingId) await query(`DELETE FROM pending_registrations WHERE id=$1`, [pendingId]);
             return res.json({ ok: true, message: "Account already created." });
         }
 
@@ -855,7 +927,49 @@ r.post("/verify-session", async (req, res) => {
             return res.status(400).json({ error: "Could not determine plan from price." });
         }
 
-        // Create the account
+        // ── Case 1: pending_id in metadata (new approach) ──
+        const pendingId = session.metadata?.pending_id;
+        if (pendingId) {
+            const pending = await query(`SELECT data FROM pending_registrations WHERE id=$1`, [pendingId]);
+            if (!pending.rows[0]) {
+                return res.json({ ok: true, message: "Account already created." });
+            }
+            const data = pending.rows[0].data;
+            const registrationData = typeof data === 'string' ? JSON.parse(data) : data;
+
+            // Idempotency: check if user already created
+            const existingUser = await query(`SELECT id FROM users WHERE email=$1`, [registrationData.email]);
+            if (existingUser.rows[0]) {
+                await query(`DELETE FROM pending_registrations WHERE id=$1`, [pendingId]);
+                return res.json({ ok: true, message: "Account already created." });
+            }
+
+            await createAccountAfterPayment({
+                registrationData,
+                planInfo,
+                billing_period: planInfo.billing_period,
+                gateway: 'stripe',
+                gateway_subscription_id: subscriptionId,
+                gateway_customer_id: session.customer,
+                subscription_end: safeDate(subscription.current_period_end * 1000)
+            });
+            await query(`DELETE FROM pending_registrations WHERE id=$1`, [pendingId]);
+            return res.json({ ok: true, message: "Account created successfully." });
+        }
+
+        // ── Case 2: Legacy — registration_data in metadata ──
+        const rawRegData = session.metadata?.registration_data;
+        if (!rawRegData) {
+            return res.json({ ok: true, message: "Existing user upgrade — processed via webhook." });
+        }
+
+        const registrationData = JSON.parse(rawRegData);
+
+        const existingUser = await query(`SELECT id FROM users WHERE email=$1`, [registrationData.email]);
+        if (existingUser.rows[0]) {
+            return res.json({ ok: true, message: "Account already created." });
+        }
+
         await createAccountAfterPayment({
             registrationData,
             planInfo,
@@ -863,13 +977,13 @@ r.post("/verify-session", async (req, res) => {
             gateway: 'stripe',
             gateway_subscription_id: subscriptionId,
             gateway_customer_id: session.customer,
-            subscription_end: new Date(subscription.current_period_end * 1000)
+            subscription_end: safeDate(subscription.current_period_end * 1000)
         });
 
         res.json({ ok: true, message: "Account created successfully." });
     } catch (err) {
-        console.error("verify-session error:", err);
-        res.status(500).json({ error: "Failed to verify session and create account." });
+        console.error("verify-session error:", err.message, err.stack);
+        res.status(500).json({ error: `Failed to verify session and create account. Detail: ${err.message}` });
     }
 });
 

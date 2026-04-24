@@ -1,10 +1,20 @@
 import express from "express";
-import cors from "cors";
-import helmet from "helmet";
 import morgan from "morgan";
 import dotenv from "dotenv";
-import rateLimit from "express-rate-limit";
+import hpp from "hpp";
+
 dotenv.config(); // Loaded
+
+// 1. Validate Env before anything else
+import { validateEnv } from "./lib/validateEnv.js";
+validateEnv();
+
+import { securityHeaders } from "./middleware/securityHeaders.js";
+import { corsConfig } from "./middleware/corsConfig.js";
+import { apiLimiter } from "./middleware/rateLimiter.js";
+import { errorHandler } from "./middleware/errorHandler.js";
+import { logger, stream } from "./lib/logger.js";
+import { AppError } from "./lib/AppError.js";
 
 import authRoutes from "./routes/auth.js";
 import customersRoutes from "./routes/customers.js";
@@ -15,65 +25,43 @@ import companyRoutes from "./routes/company.js";
 import demoRoutes from "./routes/demo.js";
 import reclamationsRoutes from "./routes/reclamations.js";
 import paymentsRoutes from "./routes/payments.js";
+import agencesRoutes from "./routes/agences.js";
+import reservationsRoutes from "./routes/reservations.js";
 
 const app = express();
 
-// Configuration du Rate Limiter (protection anti-DDoS basique)
-const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 200, // Limite à 200 requêtes par IP
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: "Trop de requêtes depuis cette adresse IP, veuillez réessayer après 15 minutes." }
-});
+// 2. Trust proxy for Nginx/Heroku/Fly.io
+app.set('trust proxy', 1);
 
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 20, // Limite stricte pour l'authentification
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: "Trop de tentatives, veuillez réessayer après 15 minutes." }
-});
+// 3. Security Headers (Helmet + CSP)
+app.use(securityHeaders);
 
-app.use(apiLimiter);
-app.use(helmet());
+// 4. CORS configuration
+app.use(corsConfig());
+
+// 5. Stripe Webhook (must be parsed as raw before express.json)
 app.use("/api/payments/webhook", express.raw({ type: "application/json" }));
-app.use(express.json());
-app.use(morgan("dev"));
-const allowedOrigins = [
-  "http://localhost:5173",
-  "https://car-rental-react-seven.vercel.app"
-];
 
-app.use(cors({
-  origin: function (origin, callback) {
-    // allow requests with no origin (Postman, mobile apps)
-    if (!origin) return callback(null, true);
+// 6. Body parsers with size limits
+app.use(express.json({ limit: "10kb" }));
+app.use(express.urlencoded({ extended: true, limit: "10kb" }));
 
-    // allow localhost or local IP
-    if (origin.startsWith("http://localhost") || origin.startsWith("http://192.168")) {
-      return callback(null, true);
-    }
+// 7. Prevent HTTP Parameter Pollution
+app.use(hpp());
 
-    // allow ALL vercel preview domains
-    if (origin.endsWith(".vercel.app")) {
-      return callback(null, true);
-    }
+// 8. HTTP Request Logging (piped to Winston)
+app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev", { stream }));
 
-    // explicit allowlist
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
-
-    return callback(new Error("CORS not allowed: " + origin));
-  },
-  credentials: true
-}));
-
+// Health check (no rate limit needed)
 app.get("/health", (_req, res) => res.json({ ok: true }));
-app.get("/", (_req, res) => res.send("Car Rental API is running"));
+app.get("/", (_req, res) => res.send("Car Rental API is running securely"));
 
-app.use("/api/auth", authLimiter, authRoutes);
+// 9. Global API Rate Limiter
+// Note: Specific limiters (authLimiter, slowDownLimiter, etc.) are applied in their respective route files.
+app.use("/api", apiLimiter);
+
+// 10. Routes
+app.use("/api/auth", authRoutes);
 app.use("/api/superadmin", superadminRoutes);
 app.use("/api/company", companyRoutes);
 app.use("/api/customers", customersRoutes);
@@ -82,11 +70,19 @@ app.use("/api/rentals", rentalsRoutes);
 app.use("/api/reclamations", reclamationsRoutes);
 app.use("/api/demo", demoRoutes);
 app.use("/api/payments", paymentsRoutes);
+app.use("/api/agences", agencesRoutes);
+app.use("/api/reservations", reservationsRoutes);
+
+// 11. 404 Handler
+app.use((req, res, next) => {
+  next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
+});
+
+// 12. Global Error Handler
+app.use(errorHandler);
 
 const port = process.env.PORT || 4000;
 
-// production  app.listen(port,'0.0.0.0',() => {
-//   console.log(`✅ API running on port ${port}`);
-// });
-app.listen(port,() => {
-console.log(`✅ API running on port ${port}`)});
+app.listen(port, () => {
+  logger.info(`✅ API running securely on port ${port}`);
+});

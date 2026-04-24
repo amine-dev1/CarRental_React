@@ -6,6 +6,10 @@ import { query, pool } from "../db.js";
 import { requireAuth } from "../middleware/auth.js";
 import { requireRole } from "../middleware/roles.js";
 
+import { authLimiter } from "../middleware/rateLimiter.js";
+import { validate } from "../middleware/validate.js";
+import { loginSchema, registerSchema } from "../schemas/authSchemas.js";
+
 const r = Router();
 
 // ✅ Superadmin will create directors/agents later.
@@ -49,26 +53,9 @@ const PLAN_LIMITS = {
     Enterprise: { max_vehicles: 999999, max_users: 999999 },
 };
 
-const RegisterSchema = z.object({
-    full_name: z.string().min(2),
-    email: z.string().email(),
-    phone: z.string().optional(),
-    password: z.string().min(6),
-    enterprise_name: z.string().min(2),
-    enterprise_address: z.string().optional(),
-    registry_number: z.string().optional(),
-    country: z.string().optional(),
-    city: z.string().optional(),
-    vat_number: z.string().optional(),
-    enterprise_phone: z.string().optional(),
-    plan: z.enum(["Standard", "Pro", "Enterprise"]),
-});
+r.post("/register", authLimiter, validate(registerSchema), async (req, res) => {
+    const { name: full_name, email, phone, password, enterprise_name, enterprise_address, registry_number, country, city, vat_number, enterprise_phone, plan } = req.body;
 
-r.post("/register", async (req, res) => {
-    const parsed = RegisterSchema.safeParse(req.body);
-    if (!parsed.success) return res.status(400).json(parsed.error);
-
-    const { full_name, email, phone, password, enterprise_name, enterprise_address, registry_number, country, city, vat_number, enterprise_phone, plan } = parsed.data;
 
     // Check email uniqueness
     const existing = await query(`SELECT id FROM users WHERE email=$1`, [email]);
@@ -127,16 +114,8 @@ r.post("/register", async (req, res) => {
     }
 });
 
-const LoginSchema = z.object({
-    email: z.string().email(),
-    password: z.string().min(6),
-});
-
-r.post("/login", async (req, res) => {
-    const parsed = LoginSchema.safeParse(req.body);
-    if (!parsed.success) return res.status(400).json(parsed.error);
-
-    const { email, password } = parsed.data;
+r.post("/login", authLimiter, validate(loginSchema), async (req, res) => {
+    const { email, password } = req.body;
 
     const result = await query(`
         SELECT u.*, e.status as enterprise_status

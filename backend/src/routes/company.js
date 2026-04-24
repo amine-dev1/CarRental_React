@@ -62,7 +62,9 @@ r.get("/dashboard", async (req, res) => {
             vehicleStatusRes,
             recentRentalsRes,
             chartRes,
-            paymentStatsRes
+            paymentStatsRes,
+            agenciesRes,
+            reservationsRes
         ] = await Promise.all([
             // Total Revenue (Current) - All time or this month? Let's do all time for simplicity or last 30 days
             query(`SELECT COALESCE(SUM(amount_cents), 0) as total FROM payments WHERE enterprise_id=$1`, [eid]),
@@ -100,7 +102,13 @@ r.get("/dashboard", async (req, res) => {
             `, [eid]),
 
             // Payment Methods
-            query(`SELECT method, SUM(amount_cents)/100 as amount, COUNT(*) as count FROM payments WHERE enterprise_id=$1 GROUP BY method`, [eid])
+            query(`SELECT method, SUM(amount_cents)/100 as amount, COUNT(*) as count FROM payments WHERE enterprise_id=$1 GROUP BY method`, [eid]),
+            
+            // Agencies
+            query(`SELECT COUNT(*) as count FROM agencies WHERE enterprise_id=$1 AND status='active'`, [eid]),
+
+            // Pending Reservations
+            query(`SELECT COUNT(*) as count FROM reservations WHERE enterprise_id=$1 AND status='pending'`, [eid])
         ]);
 
         const revenue = parseInt(revenueRes.rows[0].total || 0) / 100;
@@ -132,6 +140,10 @@ r.get("/dashboard", async (req, res) => {
 
         // Format Payment Methods
         const totalPaymentAmount = paymentStatsRes.rows.reduce((acc, r) => acc + parseFloat(r.amount), 0);
+        
+        const agenciesCount = parseInt(agenciesRes.rows[0]?.count || 0);
+        const pendingReservations = parseInt(reservationsRes.rows[0]?.count || 0);
+
         const paymentMethods = paymentStatsRes.rows.map(row => ({
             method: row.method.charAt(0).toUpperCase() + row.method.slice(1),
             amount: parseFloat(row.amount),
@@ -140,18 +152,37 @@ r.get("/dashboard", async (req, res) => {
 
         // Get enterprise info
         const enterpriseRes = await query(
-            `SELECT id, name, plan, status, max_vehicles, max_users, subscription_end, subscription_status, billing_period, grace_period_end 
+            `SELECT id, name, plan, status, max_vehicles, max_users, subscription_end, subscription_status, billing_period, grace_period_end, gateway_subscription_id, payment_gateway 
              FROM enterprises WHERE id=$1`,
             [eid]
         );
+        let enterprise = enterpriseRes.rows[0];
+
+        // Self-heal: If subscription_end is null but we have a Stripe subscription, update it
+        if (!enterprise.subscription_end && enterprise.gateway_subscription_id && enterprise.payment_gateway === 'stripe') {
+            try {
+                const StripeModule = await import('stripe');
+                const stripe = new StripeModule.default(process.env.STRIPE_SECRET_KEY);
+                const sub = await stripe.subscriptions.retrieve(enterprise.gateway_subscription_id);
+                if (sub && sub.current_period_end) {
+                    const newEnd = new Date(sub.current_period_end * 1000);
+                    await query(`UPDATE enterprises SET subscription_end = $1 WHERE id = $2`, [newEnd, eid]);
+                    enterprise.subscription_end = newEnd;
+                }
+            } catch (e) {
+                console.error("Self-healing subscription_end failed:", e.message);
+            }
+        }
 
         res.json({
-            enterprise: enterpriseRes.rows[0],
+            enterprise: enterprise,
             stats: {
                 revenue: { current: revenue, previous: 0, change: 0 }, // Mock previous/change for now
                 activeRentals: { current: activeRentals, previous: 0, change: 0 },
                 totalVehicles: { current: totalVehicles, previous: 0, change: 0 },
-                customers: { current: totalCustomers, previous: 0, change: 0 }
+                customers: { current: totalCustomers, previous: 0, change: 0 },
+                agencies: { current: agenciesCount, previous: 0, change: 0 },
+                reservations: { current: pendingReservations, previous: 0, change: 0 }
             },
             revenueChart,
             vehicleStatus,

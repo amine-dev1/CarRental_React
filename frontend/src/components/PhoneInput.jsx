@@ -5,6 +5,21 @@ import { ChevronDown } from 'lucide-react';
 // Pre-sorted popular countries (shown first in dropdown)
 const POPULAR_CODES = ['MA', 'FR', 'US', 'GB', 'DE', 'ES', 'IT', 'BE', 'CA', 'SA', 'AE', 'TN', 'DZ'];
 
+/**
+ * Formats raw digits into readable phone groups.
+ * e.g. "655555555" → "6 55 55 55 55"
+ *       digits: first 1, then pairs of 2
+ */
+function formatPhone(raw = '') {
+    const digits = String(raw).replace(/\D/g, '');
+    if (!digits) return '';
+    // First digit alone, then pairs of 2
+    const first = digits.slice(0, 1);
+    const rest = digits.slice(1);
+    const pairs = rest.match(/.{1,2}/g) || [];
+    return [first, ...pairs].join(' ');
+}
+
 export default function PhoneInput({
     value,
     onChange,
@@ -254,8 +269,16 @@ export default function PhoneInput({
                 placeholder={placeholder}
                 required={required}
                 className={inputClasses}
-                value={value}
-                onChange={(e) => onChange(e.target.value)}
+                value={formatPhone(value)}
+                onChange={(e) => {
+                    // Strip formatting, keep only digits
+                    let raw = e.target.value.replace(/[^\d]/g, '');
+                    // Limit to 9 digits
+                    if (raw.length > 9) {
+                        raw = raw.slice(0, 9);
+                    }
+                    onChange(raw);
+                }}
             />
         </div>
     );
