@@ -26,7 +26,7 @@ r.get("/users", async (req, res) => {
 r.get("/me", async (req, res) => {
     try {
         const data = await query(
-            `SELECT id, name, legal_name, email, phone, enterprise_phone, address, city, country, registry_number, vat_number, tax_number, iban, logo_url, plan, status
+            `SELECT id, name, legal_name, email, phone, enterprise_phone, address, city, country, registry_number, vat_number, tax_number, iban, logo_url, plan, status, currency
              FROM enterprises WHERE id = $1`,
             [req.user.enterprise_id]
         );
@@ -50,6 +50,7 @@ const EnterpriseUpdateSchema = z.object({
     tax_number: z.string().optional().nullable(),
     iban: z.string().optional().nullable(),
     logo_url: z.string().optional().nullable(),
+    currency: z.string().min(1).max(10).optional(),
 });
 
 // PATCH /api/company/me

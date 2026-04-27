@@ -118,9 +118,12 @@ r.post("/login", authLimiter, validate(loginSchema), async (req, res) => {
     const { email, password } = req.body;
 
     const result = await query(`
-        SELECT u.*, e.status as enterprise_status
+        SELECT u.*, 
+               e.status as enterprise_status, e.logo_url as enterprise_logo, e.name as enterprise_name,
+               r.permissions
         FROM users u 
         LEFT JOIN enterprises e ON u.enterprise_id = e.id 
+        LEFT JOIN roles r ON u.custom_role_id = r.id
         WHERE u.email=$1
     `, [email]);
 
@@ -159,6 +162,9 @@ r.post("/login", authLimiter, validate(loginSchema), async (req, res) => {
             full_name: user.full_name,
             profile_photo: user.profile_photo,
             enterprise_id: user.enterprise_id,
+            enterprise_logo: user.enterprise_logo,
+            enterprise_name: user.enterprise_name,
+            permissions: user.permissions || []
         },
     });
 });
@@ -384,8 +390,20 @@ r.post("/reset-password", async (req, res) => {
 
 // optional: whoami
 r.get("/me", requireAuth, async (req, res) => {
-    const result = await query("SELECT id, email, role, full_name, profile_photo, enterprise_id FROM users WHERE id = $1", [req.user.id]);
-    res.json({ user: result.rows[0] });
+    const result = await query(`
+        SELECT u.id, u.email, u.role, u.full_name, u.profile_photo, u.enterprise_id, u.custom_role_id,
+               e.logo_url as enterprise_logo, e.name as enterprise_name,
+               r.permissions
+        FROM users u
+        LEFT JOIN enterprises e ON u.enterprise_id = e.id
+        LEFT JOIN roles r ON u.custom_role_id = r.id
+        WHERE u.id = $1
+    `, [req.user.id]);
+    const user = result.rows[0];
+    if (user) {
+        user.permissions = user.permissions || [];
+    }
+    res.json({ user });
 });
 
 export default r;

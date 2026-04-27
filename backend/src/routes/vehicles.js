@@ -2,14 +2,14 @@ import { Router } from "express";
 import { z } from "zod";
 import { query } from "../db.js";
 import { requireAuth } from "../middleware/auth.js";
-import { requireRole } from "../middleware/roles.js";
+import { requirePermission } from "../middleware/roles.js";
 import { requireEnterpriseScope } from "../middleware/tenant.js";
 
 import { slowDownLimiter } from "../middleware/rateLimiter.js";
 
 const r = Router();
 r.use(requireAuth);
-r.use(requireRole("superadmin", "director", "manager", "agent"));
+r.use(requirePermission("fleet.view"));
 r.use(requireEnterpriseScope);
 r.get("/categories", async (req, res) => {
     try {

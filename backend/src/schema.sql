@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS enterprises (
   billing_period text DEFAULT 'monthly', -- monthly | yearly
   grace_period_end timestamptz,
   deactivated_at timestamptz,
+  currency varchar(10) NOT NULL DEFAULT 'MAD',
   created_at timestamptz NOT NULL DEFAULT now()
 );
 
@@ -70,6 +71,22 @@ CREATE TABLE IF NOT EXISTS customers (
   preferred_language text DEFAULT 'en',
   created_at timestamptz NOT NULL DEFAULT now()
 );
+
+-- =========================
+-- VEHICLE CATEGORIES
+-- =========================
+CREATE TABLE IF NOT EXISTS vehicle_categories (
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  enterprise_id uuid REFERENCES enterprises(id) ON DELETE CASCADE,
+  name text NOT NULL,
+  description text,
+  color text DEFAULT '#6366F1',
+  daily_price_cents int DEFAULT NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz,
+  UNIQUE (enterprise_id, name)
+);
+CREATE INDEX IF NOT EXISTS idx_vehicle_categories_enterprise ON vehicle_categories(enterprise_id);
 
 -- =========================
 -- VEHICLES

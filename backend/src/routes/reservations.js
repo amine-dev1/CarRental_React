@@ -1,9 +1,11 @@
 import express from "express";
 import { query } from "../db.js";
 import { requireAuth } from "../middleware/auth.js";
+import { requirePermission } from "../middleware/roles.js";
 
 const r = express.Router();
 r.use(requireAuth);
+r.use(requirePermission("reservations.view"));
 
 // 1) Get all reservations for the enterprise
 r.get("/", async (req, res) => {
