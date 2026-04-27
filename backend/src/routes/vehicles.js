@@ -11,6 +11,14 @@ const r = Router();
 r.use(requireAuth);
 r.use(requireRole("superadmin", "director", "manager", "agent"));
 r.use(requireEnterpriseScope);
+r.get("/categories", async (req, res) => {
+    try {
+        const data = await query(`SELECT * FROM vehicle_categories WHERE enterprise_id = $1 OR enterprise_id IS NULL ORDER BY name ASC`, [req.user.enterprise_id]);
+        res.json(data.rows);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
 
 r.get("/", slowDownLimiter, async (req, res) => {
     const enterpriseId = req.user.role === "superadmin" ? req.query.enterprise_id : req.user.enterprise_id;
@@ -49,12 +57,23 @@ const VehicleSchema = z.object({
     category_id: z.string().uuid().optional().nullable(),
     brand: z.string().optional().nullable(),
     model: z.string().optional().nullable(),
+    year: z.number().int().optional().nullable(),
+    color: z.string().optional().nullable(),
+    vin: z.string().optional().nullable(),
     fuel_type: z.enum(["essence", "diesel", "hybride", "electrique"]).optional().nullable(),
     transmission: z.enum(["manuelle", "automatique"]).optional().nullable(),
     seats: z.number().int().positive().optional().nullable(),
     doors: z.number().int().positive().optional().nullable(),
     ac: z.boolean().optional(),
     deposit_cents: z.number().int().nonnegative().optional().nullable(),
+    mileage: z.number().int().nonnegative().optional().nullable(),
+    last_service_km: z.number().int().nonnegative().optional().nullable(),
+    next_service_km: z.number().int().nonnegative().optional().nullable(),
+    insurance_expiry: z.string().optional().nullable(), // date string
+    last_maintenance_date: z.string().optional().nullable(), // date string
+    next_maintenance_date: z.string().optional().nullable(), // date string
+    photo_url: z.string().optional().nullable(),
+    notes: z.string().optional().nullable(),
 });
 
 r.post("/", async (req, res) => {
@@ -68,11 +87,15 @@ r.post("/", async (req, res) => {
         const data = await query(
             `INSERT INTO vehicles (
                 enterprise_id, name, plate, daily_price_cents, status,
-                agency_id, category_id, brand, model, fuel_type, transmission, seats, doors, ac, deposit_cents
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING *`,
+                agency_id, category_id, brand, model, year, color, vin, fuel_type, transmission, 
+                seats, doors, ac, deposit_cents, mileage, last_service_km, next_service_km,
+                insurance_expiry, last_maintenance_date, next_maintenance_date, photo_url, notes
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26) RETURNING *`,
             [
                 req.user.enterprise_id, v.name, v.plate, v.daily_price_cents, v.status || "available",
-                v.agency_id, v.category_id, v.brand, v.model, v.fuel_type, v.transmission, v.seats || 5, v.doors || 4, v.ac ?? true, v.deposit_cents
+                v.agency_id, v.category_id, v.brand, v.model, v.year, v.color, v.vin, v.fuel_type, v.transmission,
+                v.seats || 5, v.doors || 4, v.ac ?? true, v.deposit_cents, v.mileage, v.last_service_km, v.next_service_km,
+                v.insurance_expiry || null, v.last_maintenance_date || null, v.next_maintenance_date || null, v.photo_url || null, v.notes || null
             ]
         );
         res.json(data.rows[0]);
@@ -90,13 +113,18 @@ r.put("/:id", async (req, res) => {
         const data = await query(
             `UPDATE vehicles SET
                 name=$1, plate=$2, daily_price_cents=$3, status=$4,
-                agency_id=$5, category_id=$6, brand=$7, model=$8, fuel_type=$9,
-                transmission=$10, seats=$11, doors=$12, ac=$13, deposit_cents=$14, updated_at=now()
-             WHERE id=$15 AND enterprise_id=$16 RETURNING *`,
+                agency_id=$5, category_id=$6, brand=$7, model=$8, year=$9, color=$10, vin=$11, fuel_type=$12,
+                transmission=$13, seats=$14, doors=$15, ac=$16, deposit_cents=$17, 
+                mileage=$18, last_service_km=$19, next_service_km=$20,
+                insurance_expiry=$21, last_maintenance_date=$22, next_maintenance_date=$23, photo_url=$24, notes=$25,
+                updated_at=now()
+             WHERE id=$26 AND enterprise_id=$27 RETURNING *`,
             [
                 v.name, v.plate, v.daily_price_cents, v.status || "available",
-                v.agency_id, v.category_id, v.brand, v.model, v.fuel_type,
+                v.agency_id, v.category_id, v.brand, v.model, v.year, v.color, v.vin, v.fuel_type,
                 v.transmission, v.seats, v.doors, v.ac ?? true, v.deposit_cents,
+                v.mileage, v.last_service_km, v.next_service_km,
+                v.insurance_expiry || null, v.last_maintenance_date || null, v.next_maintenance_date || null, v.photo_url || null, v.notes || null,
                 req.params.id, req.user.enterprise_id
             ]
         );

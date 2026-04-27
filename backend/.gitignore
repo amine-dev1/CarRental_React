@@ -21,3 +21,7 @@ Thumbs.db
 # Backend Specific
 dist/
 build/
+
+# User uploads (keep folder structure, not files)
+uploads/vehicles/*
+!uploads/vehicles/.gitkeep

@@ -32,6 +32,7 @@ const AgencySchema = z.object({
     code: z.string().max(10).optional(),
     address: z.string().optional(),
     city: z.string().optional(),
+    country: z.string().optional(),
     phone: z.string().optional(),
     email: z.string().email().optional().or(z.literal("")),
     is_main: z.boolean().default(false),
@@ -54,9 +55,9 @@ r.post("/", async (req, res) => {
     }
 
     const data = await query(
-        `INSERT INTO agencies(enterprise_id, name, code, address, city, phone, email, is_main, status)
-         VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
-        [req.user.enterprise_id, a.name, a.code || null, a.address || null, a.city || null, a.phone || null, a.email || null, a.is_main, a.status || "active"]
+        `INSERT INTO agencies(enterprise_id, name, code, address, city, country, phone, email, is_main, status)
+         VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`,
+        [req.user.enterprise_id, a.name, a.code || null, a.address || null, a.city || null, a.country || null, a.phone || null, a.email || null, a.is_main, a.status || "active"]
     );
 
     res.json(data.rows[0]);
@@ -78,9 +79,9 @@ r.put("/:id", async (req, res) => {
 
     const data = await query(
         `UPDATE agencies 
-         SET name=$1, code=$2, address=$3, city=$4, phone=$5, email=$6, is_main=$7, status=$8, updated_at=now()
-         WHERE id=$9 RETURNING *`,
-        [a.name, a.code || null, a.address || null, a.city || null, a.phone || null, a.email || null, a.is_main, a.status || "active", req.params.id]
+         SET name=$1, code=$2, address=$3, city=$4, country=$5, phone=$6, email=$7, is_main=$8, status=$9, updated_at=now()
+         WHERE id=$10 RETURNING *`,
+        [a.name, a.code || null, a.address || null, a.city || null, a.country || null, a.phone || null, a.email || null, a.is_main, a.status || "active", req.params.id]
     );
 
     res.json(data.rows[0]);

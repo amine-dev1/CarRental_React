@@ -22,6 +22,69 @@ r.get("/users", async (req, res) => {
     res.json(data.rows);
 });
 
+// GET /api/company/me
+r.get("/me", async (req, res) => {
+    try {
+        const data = await query(
+            `SELECT id, name, legal_name, email, phone, enterprise_phone, address, city, country, registry_number, vat_number, tax_number, iban, logo_url, plan, status
+             FROM enterprises WHERE id = $1`,
+            [req.user.enterprise_id]
+        );
+        res.json(data.rows[0]);
+    } catch (e) {
+        res.status(500).json({ error: "Failed to fetch enterprise profile" });
+    }
+});
+
+const EnterpriseUpdateSchema = z.object({
+    name: z.string().min(2).optional(),
+    legal_name: z.string().optional().nullable(),
+    email: z.string().email().optional().nullable(),
+    phone: z.string().optional().nullable(),
+    enterprise_phone: z.string().optional().nullable(),
+    address: z.string().optional().nullable(),
+    city: z.string().optional().nullable(),
+    country: z.string().optional().nullable(),
+    registry_number: z.string().optional().nullable(),
+    vat_number: z.string().optional().nullable(),
+    tax_number: z.string().optional().nullable(),
+    iban: z.string().optional().nullable(),
+    logo_url: z.string().optional().nullable(),
+});
+
+// PATCH /api/company/me
+r.patch("/me", async (req, res) => {
+    const parsed = EnterpriseUpdateSchema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ error: parsed.error.errors[0].message });
+
+    const fields = [];
+    const values = [];
+    let idx = 1;
+
+    for (const [key, value] of Object.entries(parsed.data)) {
+        if (value !== undefined) {
+            fields.push(`${key} = $${idx++}`);
+            values.push(value);
+        }
+    }
+
+    if (!fields.length) return res.status(400).json({ error: "No fields to update" });
+
+    fields.push(`updated_at = NOW()`);
+    values.push(req.user.enterprise_id);
+
+    try {
+        const result = await query(
+            `UPDATE enterprises SET ${fields.join(", ")} WHERE id = $${idx} RETURNING *`,
+            values
+        );
+        res.json(result.rows[0]);
+    } catch (e) {
+        console.error("Failed to update enterprise profile", e);
+        res.status(500).json({ error: "Failed to update enterprise profile" });
+    }
+});
+
 const AgentSchema = z.object({
     email: z.string().email(),
     password: z.string().min(6),

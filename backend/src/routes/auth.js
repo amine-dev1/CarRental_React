@@ -84,7 +84,7 @@ r.post("/register", authLimiter, validate(registerSchema), async (req, res) => {
             `INSERT INTO users(enterprise_id, email, phone, full_name, password_hash, role)
              VALUES($1, $2, $3, $4, $5, 'director')
              RETURNING id, email, role, full_name, profile_photo, enterprise_id`,
-            [enterprise.id, email, phone || null, full_name, hash]
+            [enterprise.id, email, phone?.trim() || null, full_name, hash]
         );
         const user = userResult.rows[0];
 
@@ -327,7 +327,11 @@ const ResetPasswordSchema = z.object({
     phone: z.string().optional(),
     code: z.string().optional(),
     token: z.string().optional(),
-    password: z.string().min(6),
+    password: z.string()
+        .min(8, "Le mot de passe doit contenir au moins 8 caractères")
+        .regex(/[A-Z]/, "Le mot de passe doit contenir au moins une lettre majuscule")
+        .regex(/[0-9]/, "Le mot de passe doit contenir au moins un chiffre")
+        .regex(/[^A-Za-z0-9]/, "Le mot de passe doit contenir au moins un caractère spécial"),
 }).refine(data => data.email || data.phone, {
     message: "Email ou téléphone requis",
 });

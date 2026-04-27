@@ -25,7 +25,9 @@ function safeDate(val) {
 
 // ─── Helper: create enterprise+user after payment success ───
 async function createAccountAfterPayment({ registrationData, planInfo, billing_period, gateway, gateway_subscription_id, gateway_customer_id, subscription_end }) {
-    const { full_name, email, phone, password_hash, enterprise_name, enterprise_address, registry_number, country, city, vat_number, enterprise_phone, plan } = registrationData;
+    const { full_name, email, password_hash, enterprise_name, enterprise_address, registry_number, country, city, vat_number, enterprise_phone, plan } = registrationData;
+    // Normalize phone: empty strings → null to avoid unique constraint violations
+    const phone = registrationData.phone?.trim() || null;
 
     // Check if already created (idempotency)
     const existingUser = await query(`SELECT id FROM users WHERE email=$1`, [email]);
@@ -58,15 +60,41 @@ async function createAccountAfterPayment({ registrationData, planInfo, billing_p
                  gateway_subscription_id, gateway, safeDate(subscription_end), enterprise.id]
             );
         } else {
-            const entResult = await client.query(
-                `INSERT INTO enterprises(name, address, registry_number, country, city, vat_number, enterprise_phone, plan, status, subscription_status, billing_period, max_vehicles, max_users, gateway_subscription_id, payment_gateway, gateway_customer_id, subscription_end)
-                 VALUES($1,$2,$3,$4,$5,$6,$7,$8,'active','active',$9,$10,$11,$12,$13,$14,$15)
-                 RETURNING *`,
-                [enterprise_name, enterprise_address||null, registry_number||null, country||null, city||null, vat_number||null, enterprise_phone||null,
-                 planInfo.plan, billing_period, planInfo.max_vehicles, planInfo.max_users,
-                 gateway_subscription_id||null, gateway, gateway_customer_id||null, safeDate(subscription_end)]
-            );
-            enterprise = entResult.rows[0];
+            try {
+                const entResult = await client.query(
+                    `INSERT INTO enterprises(name, address, registry_number, country, city, vat_number, enterprise_phone, plan, status, subscription_status, billing_period, max_vehicles, max_users, gateway_subscription_id, payment_gateway, gateway_customer_id, subscription_end)
+                     VALUES($1,$2,$3,$4,$5,$6,$7,$8,'active','active',$9,$10,$11,$12,$13,$14,$15)
+                     RETURNING *`,
+                    [enterprise_name, enterprise_address||null, registry_number||null, country||null, city||null, vat_number||null, enterprise_phone||null,
+                     planInfo.plan, billing_period, planInfo.max_vehicles, planInfo.max_users,
+                     gateway_subscription_id||null, gateway, gateway_customer_id||null, safeDate(subscription_end)]
+                );
+                enterprise = entResult.rows[0];
+            } catch (insertErr) {
+                if (insertErr.code === '23505') { // unique_violation
+                    console.log(`⚠️ Concurrent insert detected for gateway_customer_id ${gateway_customer_id}. Fetching existing...`);
+                    const concurrentEnt = await client.query(
+                        `SELECT * FROM enterprises WHERE gateway_customer_id = $1`,
+                        [gateway_customer_id]
+                    );
+                    enterprise = concurrentEnt.rows[0];
+                    if (enterprise) {
+                        await client.query(
+                            `UPDATE enterprises 
+                             SET plan = $1, status = 'active', subscription_status = 'active', billing_period = $2, 
+                                 max_vehicles = $3, max_users = $4, gateway_subscription_id = $5, 
+                                 payment_gateway = $6, subscription_end = $7
+                             WHERE id = $8`,
+                            [planInfo.plan, billing_period, planInfo.max_vehicles, planInfo.max_users, 
+                             gateway_subscription_id, gateway, safeDate(subscription_end), enterprise.id]
+                        );
+                    } else {
+                        throw insertErr;
+                    }
+                } else {
+                    throw insertErr;
+                }
+            }
         }
 
         const existingUser = await client.query(`SELECT id FROM users WHERE email = $1`, [email]);
@@ -274,7 +302,7 @@ r.post("/register-checkout", async (req, res) => {
         // Check email uniqueness early
         const existing = await query(`SELECT id FROM users WHERE email=$1`, [email]);
         if (existing.rows[0]) {
-            return res.status(400).json({ error: "Cet email est déjà utilisé." });
+            return res.status(400).json({ error: "Ce compte existe déjà. Veuillez vous connecter avec vos identifiants." });
         }
 
         const password_hash = await bcrypt.hash(password, 10);
