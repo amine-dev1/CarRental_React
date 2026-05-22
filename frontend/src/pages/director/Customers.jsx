@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Users, Search, RefreshCw, Plus, Building2, ShieldAlert, X } from 'lucide-react';
 import { api } from '../../api/http';
 import { useTheme } from '../../context/ThemeContext';
 import { showSuccess, showError } from '../../components/CustomToasts';
 import CustomSelect from '../../components/common/CustomSelect';
+import PhoneInput from '../../components/PhoneInput';
 
 const token = {
     primary: '#6366F1', primaryLight: '#EEF2FF',
@@ -47,7 +48,8 @@ export default function Customers() {
     const [typeFilter, setTypeFilter] = useState('all');
     
     const [showModal, setShowModal] = useState(false);
-    const [form, setForm] = useState({ full_name: '', phone: '', email: '', is_company: false, company_name: '', id_number: '' });
+    const [form, setForm] = useState({ full_name: '', phone: '', phoneRaw: '', email: '', is_company: false, company_name: '', id_number: '' });
+    const phoneCountryRef = useRef({ code: '+212' });
 
     useEffect(() => { loadData(); }, []);
 
@@ -66,11 +68,16 @@ export default function Customers() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
+            const fullPhone = form.phoneRaw
+                ? `${phoneCountryRef.current?.code || '+212'}${form.phoneRaw}`
+                : '';
+            const payload = { ...form, phone: fullPhone || undefined };
+            delete payload.phoneRaw;
             if (form.id) {
-                await api(`/api/customers/${form.id}`, { method: 'PUT', body: form });
+                await api(`/api/customers/${form.id}`, { method: 'PUT', body: payload });
                 showSuccess("Client mis à jour avec succès !");
             } else {
-                await api('/api/customers', { method: 'POST', body: form });
+                await api('/api/customers', { method: 'POST', body: payload });
                 showSuccess("Client ajouté avec succès !");
             }
             setShowModal(false);
@@ -109,7 +116,7 @@ export default function Customers() {
                         <h1 style={{ fontSize: 24, fontWeight: 700, margin: '0 0 4px', color: darkMode ? '#F8FAFC' : token.neutral900 }}>Clients</h1>
                         <p style={{ fontSize: 14, color: darkMode ? token.neutral400 : token.neutral600, margin: 0 }}>Gérez votre base clients</p>
                     </div>
-                    <button onClick={() => { setForm({ full_name: '', phone: '', email: '', is_company: false, company_name: '', id_number: '' }); setShowModal(true); }} style={{
+                    <button onClick={() => { setForm({ full_name: '', phone: '', phoneRaw: '', email: '', is_company: false, company_name: '', id_number: '' }); phoneCountryRef.current = { code: '+212' }; setShowModal(true); }} style={{
                         background: token.primary, color: '#fff', border: 'none', padding: '10px 16px', borderRadius: 10, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8
                     }}>
                         <Plus size={16} /> Ajouter un client
@@ -187,7 +194,14 @@ export default function Customers() {
                             </div>
                             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                                 <input value={form.full_name} onChange={e => setForm({...form, full_name: e.target.value})} placeholder="Nom Complet" style={{ padding: 12, borderRadius: 8, background: darkMode ? token.dark900 : '#fff', color: darkMode ? '#fff' : '#000', border: `1px solid ${darkMode ? token.dark700 : token.neutral200}` }} required />
-                                <input value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} placeholder="Téléphone" style={{ padding: 12, borderRadius: 8, background: darkMode ? token.dark900 : '#fff', color: darkMode ? '#fff' : '#000', border: `1px solid ${darkMode ? token.dark700 : token.neutral200}` }} />
+                                <div>
+                                    <PhoneInput
+                                        value={form.phoneRaw || ''}
+                                        onChange={(raw) => setForm({ ...form, phoneRaw: raw })}
+                                        onCountryChange={(c) => { phoneCountryRef.current = c; }}
+                                        placeholder="6 XX XX XX XX"
+                                    />
+                                </div>
                                 <input type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} placeholder="Email" style={{ padding: 12, borderRadius: 8, background: darkMode ? token.dark900 : '#fff', color: darkMode ? '#fff' : '#000', border: `1px solid ${darkMode ? token.dark700 : token.neutral200}` }} />
                                 
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 8 }}>

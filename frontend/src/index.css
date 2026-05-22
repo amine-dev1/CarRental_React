@@ -114,4 +114,14 @@
     transform: translateY(-1px);
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
   }
+
+  /* Hide Number Input Arrows */
+  input::-webkit-outer-spin-button,
+  input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type=number] {
+    -moz-appearance: textfield;
+  }
 }

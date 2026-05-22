@@ -273,9 +273,9 @@ export default function PhoneInput({
                 onChange={(e) => {
                     // Strip formatting, keep only digits
                     let raw = e.target.value.replace(/[^\d]/g, '');
-                    // Limit to 9 digits
-                    if (raw.length > 9) {
-                        raw = raw.slice(0, 9);
+                    // Limit to 10 digits
+                    if (raw.length > 10) {
+                        raw = raw.slice(0, 10);
                     }
                     onChange(raw);
                 }}

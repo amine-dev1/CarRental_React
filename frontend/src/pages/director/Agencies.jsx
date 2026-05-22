@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { api } from '../../api/http';
+import PhoneInput from '../../components/PhoneInput';
+import { CountrySelect, CitySelect } from '../../components/CountryCitySelect';
 import {
     Building2,
     Plus,
@@ -22,8 +24,9 @@ export default function Agencies() {
     const [showModal, setShowModal] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [form, setForm] = useState({
-        name: '', code: '', address: '', city: '', phone: '', email: '', is_main: false, status: 'active'
+        name: '', code: '', address: '', country: '', countryCode: '', city: '', phone: '', phoneRaw: '', email: '', is_main: false, status: 'active'
     });
+    const phoneCountryRef = useRef({ code: '+212' });
 
     const token = {
         primary: '#6366F1', primaryLight: '#EEF2FF',
@@ -58,15 +61,22 @@ export default function Agencies() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
+            // Build full phone string (e.g. "+212612345678")
+            const fullPhone = form.phoneRaw
+                ? `${phoneCountryRef.current?.code || '+212'}${form.phoneRaw}`
+                : '';
+            const payload = { ...form, phone: fullPhone || undefined };
+            delete payload.phoneRaw;
             if (form.id) {
-                await api(`/api/agences/${form.id}`, { method: 'PUT', body: form });
+                await api(`/api/agences/${form.id}`, { method: 'PUT', body: payload });
                 showSuccess("Agence mise à jour avec succès !");
             } else {
-                await api('/api/agences', { method: 'POST', body: form });
+                await api('/api/agences', { method: 'POST', body: payload });
                 showSuccess("Agence créée avec succès !");
             }
             setShowModal(false);
-            setForm({ name: '', code: '', address: '', city: '', phone: '', email: '', is_main: false, status: 'active' });
+            setForm({ name: '', code: '', address: '', country: '', countryCode: '', city: '', phone: '', phoneRaw: '', email: '', is_main: false, status: 'active' });
+            phoneCountryRef.current = { code: '+212' };
             fetchAgencies();
         } catch (e) {
             showError(e.message || "Erreur lors de l'enregistrement");
@@ -151,7 +161,7 @@ export default function Agencies() {
                         />
                     </div>
                     <button 
-                        onClick={() => { setForm({ name: '', code: '', address: '', city: '', phone: '', email: '', is_main: false, status: 'active' }); setShowModal(true); }}
+                        onClick={() => { setForm({ name: '', code: '', address: '', country: '', countryCode: '', city: '', phone: '', phoneRaw: '', email: '', is_main: false, status: 'active' }); phoneCountryRef.current = { code: '+212' }; setShowModal(true); }}
                         style={{
                             background: token.primary, color: '#fff', border: 'none', borderRadius: 10,
                             padding: '10px 18px', fontSize: 14, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer'
@@ -167,7 +177,8 @@ export default function Agencies() {
                         <thead style={{ background: darkMode ? token.dark700 : token.neutral50, borderBottom: `1px solid ${borderColor}` }}>
                             <tr>
                                 <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: 13, fontWeight: 600, color: textSecondary }}>Nom</th>
-                                <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: 13, fontWeight: 600, color: textSecondary }}>Lieu</th>
+                                <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: 13, fontWeight: 600, color: textSecondary }}>Pays</th>
+                                <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: 13, fontWeight: 600, color: textSecondary }}>Ville / Contact</th>
                                 <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: 13, fontWeight: 600, color: textSecondary }}>Véhicules</th>
                                 <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: 13, fontWeight: 600, color: textSecondary }}>Statut</th>
                                 <th style={{ padding: '16px 24px', textAlign: 'right', fontSize: 13, fontWeight: 600, color: textSecondary }}>Actions</th>
@@ -191,6 +202,9 @@ export default function Agencies() {
                                         </div>
                                     </td>
                                     <td style={{ padding: '16px 24px' }}>
+                                        <div style={{ fontSize: 14, color: textPrimary, fontWeight: 500 }}>{agency.country || 'Non défini'}</div>
+                                    </td>
+                                    <td style={{ padding: '16px 24px' }}>
                                         <div style={{ fontSize: 14, color: textPrimary, display: 'flex', alignItems: 'center', gap: 6 }}><MapPin size={14} color={textSecondary} /> {agency.city || 'Non défini'}</div>
                                         {agency.phone && <div style={{ fontSize: 13, color: textSecondary, marginTop: 4, display: 'flex', alignItems: 'center', gap: 6 }}><Phone size={14} /> {agency.phone}</div>}
                                     </td>
@@ -207,7 +221,7 @@ export default function Agencies() {
                                 </tr>
                             )) : (
                                 <tr>
-                                    <td colSpan={5} style={{ padding: 40, textAlign: 'center', color: textSecondary }}>
+                                    <td colSpan={6} style={{ padding: 40, textAlign: 'center', color: textSecondary }}>
                                         Aucune agence trouvée.
                                     </td>
                                 </tr>
@@ -222,7 +236,7 @@ export default function Agencies() {
                         position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, 
                         background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 
                     }}>
-                        <div style={{ background: cardBg, borderRadius: 20, width: '100%', maxWidth: 500, padding: 32, border: `1px solid ${borderColor}` }}>
+                        <div style={{ background: cardBg, borderRadius: 20, width: '100%', maxWidth: 525, padding: 32, border: `1px solid ${borderColor}` }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
                                 <h2 style={{ fontSize: 20, fontWeight: 700, color: textPrimary, margin: 0 }}>{form.id ? 'Modifier l\'agence' : 'Nouvelle agence'}</h2>
                                 <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: textSecondary }}><X size={20} /></button>
@@ -245,26 +259,40 @@ export default function Agencies() {
                                         />
                                     </div>
                                     <div>
+                                        <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: textSecondary, marginBottom: 8 }}>Pays</label>
+                                        <CountrySelect
+                                            darkMode={darkMode}
+                                            value={form.country}
+                                            onChange={(name, code) => setForm({ ...form, country: name, countryCode: code, city: '' })}
+                                        />
+                                    </div>
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                                    <div>
                                         <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: textSecondary, marginBottom: 8 }}>Ville</label>
+                                        <CitySelect
+                                            darkMode={darkMode}
+                                            countryCode={form.countryCode}
+                                            value={form.city}
+                                            onChange={(c) => setForm({ ...form, city: c })}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: textSecondary, marginBottom: 8 }}>Adresse complète</label>
                                         <input 
-                                            value={form.city} onChange={e => setForm({...form, city: e.target.value})}
+                                            value={form.address} onChange={e => setForm({...form, address: e.target.value})}
                                             style={{ width: '100%', padding: '10px 14px', borderRadius: 10, border: `1px solid ${borderColor}`, background: bg, color: textPrimary, outline: 'none' }} 
                                         />
                                     </div>
                                 </div>
-                                <div>
-                                    <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: textSecondary, marginBottom: 8 }}>Adresse complète</label>
-                                    <input 
-                                        value={form.address} onChange={e => setForm({...form, address: e.target.value})}
-                                        style={{ width: '100%', padding: '10px 14px', borderRadius: 10, border: `1px solid ${borderColor}`, background: bg, color: textPrimary, outline: 'none' }} 
-                                    />
-                                </div>
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                                     <div>
                                         <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: textSecondary, marginBottom: 8 }}>Téléphone</label>
-                                        <input 
-                                            value={form.phone} onChange={e => setForm({...form, phone: e.target.value})}
-                                            style={{ width: '100%', padding: '10px 14px', borderRadius: 10, border: `1px solid ${borderColor}`, background: bg, color: textPrimary, outline: 'none' }} 
+                                        <PhoneInput
+                                            value={form.phoneRaw || ''}
+                                            onChange={(raw) => setForm({ ...form, phoneRaw: raw })}
+                                            onCountryChange={(c) => { phoneCountryRef.current = c; }}
+                                            placeholder="6 XX XX XX XX"
                                         />
                                     </div>
                                     <div>

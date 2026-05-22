@@ -3,7 +3,14 @@ import { query } from "../db.js";
 
 export async function requireAuth(req, res, next) {
     const header = req.headers.authorization || "";
-    const token = header.startsWith("Bearer ") ? header.slice(7) : null;
+    
+    let token = header.startsWith("Bearer ") ? header.slice(7) : null;
+    
+    // Allow token in query string for downloads/window.open
+    if (!token && req.query.token) {
+        token = req.query.token;
+    }
+
     if (!token) return res.status(401).json({ error: "Missing token" });
 
     try {

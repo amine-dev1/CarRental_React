@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <style>
+    body { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 11pt; color: #222; margin: 0; padding: 0; }
+    .page { padding: 40px; }
+    .header { display: flex; justify-content: space-between; border-bottom: 2px solid #1a1a2e; padding-bottom: 12px; margin-bottom: 24px; }
+    .contract-number { font-size: 18pt; font-weight: bold; color: #1a1a2e; }
+    .section { margin-bottom: 20px; }
+    .section-title { font-size: 10pt; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; color: #555; border-bottom: 1px solid #eee; padding-bottom: 4px; margin-bottom: 10px; }
+    table { width: 100%; border-collapse: collapse; }
+    td { padding: 6px 8px; border: 1px solid #ddd; font-size: 10pt; }
+    td:first-child { font-weight: bold; width: 40%; background: #f9f9f9; }
+    .signature-block { margin-top: 40px; display: flex; justify-content: space-between; gap: 20px; }
+    .sig-box { border: 1px solid #ccc; width: 45%; padding: 10px; min-height: 120px; position: relative; }
+    .sig-label { font-size: 9pt; color: #888; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 4px; }
+    .sig-image img { max-width: 100%; max-height: 80px; display: block; margin: 0 auto; }
+    .footer { margin-top: 30px; font-size: 8pt; color: #aaa; border-top: 1px solid #eee; padding-top: 8px; text-align: center; }
+    .text-right { text-align: right; }
+    .bold { font-weight: bold; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="header">
+      <div>
+        <div class="contract-number">Contrat N° {{contract_number}}</div>
+        <div>Date de location : {{start_date}} au {{end_date}}</div>
+      </div>
+      <div class="text-right">
+        <div class="bold">{{enterprise.name}}</div>
+        <div>{{enterprise.address}}</div>
+        <div>{{enterprise.enterprise_phone}}</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Locataire</div>
+      <table>
+        <tr><td>Nom complet</td><td>{{customer.full_name}}</td></tr>
+        <tr><td>N° permis de conduire</td><td>{{customer.driver_license_number}}</td></tr>
+        <tr><td>Téléphone</td><td>{{customer.phone}}</td></tr>
+        <tr><td>Adresse</td><td>{{customer.address}}, {{customer.city}}, {{customer.country}}</td></tr>
+      </table>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Véhicule</div>
+      <table>
+        <tr><td>Immatriculation</td><td>{{vehicle.plate}}</td></tr>
+        <tr><td>Modèle / Marque</td><td>{{vehicle.name}}</td></tr>
+        <tr><td>Kilométrage au départ</td><td>{{mileage_start}} km</td></tr>
+        <tr><td>Niveau de carburant (Départ)</td><td>{{fuel_level_start}}</td></tr>
+      </table>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Détails de la Location & Conditions Financières</div>
+      <table>
+        <tr><td>Durée de location</td><td>{{duration_days}} jour(s)</td></tr>
+        <tr><td>Tarif journalier</td><td>{{daily_price}} {{currency}}</td></tr>
+        <tr><td>Montant de la caution</td><td>{{deposit_amount}} {{currency}}</td></tr>
+        <tr><td><span class="bold">Total de la location</span></td><td><span class="bold">{{total_amount}} {{currency}}</span></td></tr>
+      </table>
+    </div>
+
+    {{#if notes}}
+    <div class="section">
+      <div class="section-title">Observations / Notes</div>
+      <div style="font-size: 10pt; padding: 8px; border: 1px solid #ddd;">{{notes}}</div>
+    </div>
+    {{/if}}
+
+    <div class="signature-block">
+      <div class="sig-box">
+        <div class="sig-label">Signature de l'agence (Cachet & Signature)</div>
+        <!-- Espace pour signature manuelle ou logo agence -->
+      </div>
+      <div class="sig-box">
+        <div class="sig-label">Signature du client — {{signed_by_name}}</div>
+        <div class="sig-image">
+          {{#if signature_data}}
+            <img src="{{signature_data}}" alt="Signature Client"/>
+          {{/if}}
+        </div>
+        <div style="font-size:8pt; color:#aaa; margin-top:8px; text-align: center;">
+          Signé électroniquement le {{signed_at}}<br/>
+          Adresse IP : {{signature_ip}}
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      Document généré par le système de gestion {{enterprise.name}} • {{contract_number}} • {{generated_at}}
+    </div>
+  </div>
+</body>
+</html>

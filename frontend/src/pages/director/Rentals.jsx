@@ -4,6 +4,7 @@ import { api } from '../../api/http';
 import { useTheme } from '../../context/ThemeContext';
 import { showSuccess, showError } from '../../components/CustomToasts';
 import CustomSelect from '../../components/common/CustomSelect';
+import ContractTab from './Rentals/ContractTab';
 
 const token = {
     primary: '#6366F1', primaryLight: '#EEF2FF',
@@ -65,6 +66,8 @@ export default function Rentals() {
     const [statusFilter, setStatusFilter] = useState('all');
     
     const [showModal, setShowModal] = useState(false);
+    const [showContractModal, setShowContractModal] = useState(false);
+    const [selectedRental, setSelectedRental] = useState(null);
     const [form, setForm] = useState({ customer_id: '', vehicle_id: '', planned_start_date: '', planned_end_date: '', pickup_agency_id: '', return_agency_id: '' });
 
     useEffect(() => { loadData(); }, []);
@@ -176,7 +179,13 @@ export default function Rentals() {
                         </thead>
                         <tbody>
                             {filtered.map(r => (
-                                <tr key={r.id} style={{ borderBottom: `1px solid ${darkMode ? token.dark700 : token.neutral200}` }}>
+                                <tr 
+                                    key={r.id} 
+                                    onClick={() => { setSelectedRental(r); setShowContractModal(true); }}
+                                    style={{ borderBottom: `1px solid ${darkMode ? token.dark700 : token.neutral200}`, cursor: 'pointer', transition: 'background 0.2s' }}
+                                    onMouseEnter={e => e.currentTarget.style.background = darkMode ? token.dark700 : token.neutral100}
+                                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                                >
                                     <td style={{ padding: '16px 24px' }}>
                                         <div style={{ fontWeight: 600, color: darkMode ? '#fff' : '#000' }}>{r.contract_number || 'Non généré'}</div>
                                         <div style={{ fontSize: 12, color: token.neutral400 }}>{r.pickup_agency_name || '—'}</div>
@@ -234,6 +243,22 @@ export default function Rentals() {
 
                                 <button type="submit" style={{ padding: 12, background: token.primary, color: '#fff', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 600 }}>Générer Contrat</button>
                             </form>
+                        </div>
+                    </div>
+                )}
+
+                {showContractModal && selectedRental && (
+                    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
+                        <div style={{ background: darkMode ? token.dark800 : '#fff', borderRadius: 16, width: '90%', maxWidth: 900, maxHeight: '90vh', overflowY: 'auto', border: `1px solid ${darkMode ? token.dark700 : token.neutral200}`, position: 'relative' }}>
+                            <div style={{ position: 'sticky', top: 0, background: darkMode ? token.dark800 : '#fff', padding: '20px 24px', borderBottom: `1px solid ${darkMode ? token.dark700 : token.neutral200}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 10 }}>
+                                <h2 style={{ margin: 0, color: darkMode ? '#fff' : '#000' }}>Gestion du Contrat</h2>
+                                <button onClick={() => setShowContractModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: token.neutral400 }}><X size={24}/></button>
+                            </div>
+                            <ContractTab 
+                                rental={selectedRental} 
+                                darkMode={darkMode} 
+                                onUpdate={() => { loadData(); /* Refresh list after contract status change */ }} 
+                            />
                         </div>
                     </div>
                 )}

@@ -18,7 +18,10 @@ import {
     PanelLeftClose,
     PanelLeftOpen,
     Building2,
-    BookOpen
+    BookOpen,
+    Settings,
+    BarChart3,
+    Receipt
 } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
 
@@ -54,13 +57,17 @@ export default function DirectorLayout() {
                 {/* Logo Section */}
                 <div className={`flex items-center mb-12 ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-[#1E293B] rounded-xl flex items-center justify-center text-[#6366F1] shadow-sm flex-shrink-0">
-                            <Briefcase size={20} strokeWidth={2.5} />
+                        <div className="w-10 h-10 bg-[#1E293B] rounded-xl flex items-center justify-center text-[#6366F1] shadow-sm flex-shrink-0 overflow-hidden">
+                            {user?.enterprise_logo ? (
+                                <img src={user.enterprise_logo} alt="Logo" className="w-full h-full object-cover" />
+                            ) : (
+                                <Briefcase size={20} strokeWidth={2.5} />
+                            )}
                         </div>
                         {!isCollapsed && (
                             <div className="flex flex-col overflow-hidden whitespace-nowrap transition-all duration-300 opacity-100">
-                                <span className="text-lg font-bold text-[#F8FAFC] tracking-tight">
-                                    Directeur
+                                <span className="text-lg font-bold text-[#F8FAFC] tracking-tight truncate">
+                                    {user?.enterprise_name || "Directeur"}
                                 </span>
                                 <span className="text-xs text-[#94A3B8] font-medium">
                                     Console de gestion
@@ -98,16 +105,21 @@ export default function DirectorLayout() {
                     </button>
                 )}
 
-                {/* Navigation */}
-                <nav className="space-y-2 flex-1">
+                {/* Main Navigation */}
+                <nav className="space-y-1 flex-1">
                     {[
-                        { to: "/director", label: "Tableau de bord", icon: <LayoutDashboard size={20} /> },
-                        { to: "/director/fleet", label: "Gestion de la flotte", icon: <Car size={20} /> },
-                        { to: "/director/agencies", label: "Agences", icon: <Building2 size={20} /> },
-                        { to: "/director/customers", label: "Clients", icon: <Users size={20} /> },
-                        { to: "/director/reservations", label: "Réservations", icon: <BookOpen size={20} /> },
-                        { to: "/director/rentals", label: "Locations", icon: <CalendarRange size={20} /> },
-                    ].map(({ to, label, icon }) => (
+                        { to: "/director", label: "Tableau de bord", icon: <LayoutDashboard size={20} />, perm: null },
+                        { to: "/director/fleet", label: "Gestion de la flotte", icon: <Car size={20} />, perm: "fleet.view" },
+                        { to: "/director/agencies", label: "Agences", icon: <Building2 size={20} />, perm: "agencies.view" },
+                        { to: "/director/customers", label: "Clients", icon: <Users size={20} />, perm: "customers.view" },
+                        { to: "/director/reservations", label: "Réservations", icon: <BookOpen size={20} />, perm: "reservations.view" },
+                        { to: "/director/rentals", label: "Locations", icon: <CalendarRange size={20} />, perm: "rentals.view" },
+                        { to: "/director/admin/pricing", label: "Tarification", icon: <Receipt size={20} />, perm: "admin.access" },
+                        { to: "/director/reports", label: "Rapports & Finances", icon: <BarChart3 size={20} />, perm: "reports.view" },
+                    ].filter(item => {
+                        if (!item.perm) return true;
+                        return user?.role === 'director' || (user?.permissions || []).includes(item.perm);
+                    }).map(({ to, label, icon }) => (
                         <NavLink
                             key={to}
                             to={to}
@@ -135,6 +147,46 @@ export default function DirectorLayout() {
                             )}
                         </NavLink>
                     ))}
+
+                    {/* Administration separator */}
+                    {(user?.role === 'director' || (user?.permissions || []).includes('admin.access')) && (
+                        <>
+                            <div className={`pt-4 pb-1 ${isCollapsed ? 'flex justify-center' : ''}`}>
+                                {!isCollapsed ? (
+                                    <span className="text-xs font-semibold uppercase tracking-widest text-[#475569] px-4">
+                                        Administration
+                                    </span>
+                                ) : (
+                                    <div className="w-6 h-px bg-[#1E293B]" title="Administration" />
+                                )}
+                            </div>
+
+                            <NavLink
+                                to="/director/admin"
+                        onClick={() => setSidebarOpen(false)}
+                        className={({ isActive }) =>
+                            `group flex items-center justify-between rounded-xl font-medium transition-all duration-200 
+                            ${isCollapsed ? 'p-3 justify-center' : 'px-4 py-3'} 
+                            ${isActive
+                                ? "bg-[#1E293B] text-[#F8FAFC]"
+                                : "text-[#CBD5E1] hover:bg-white/5 hover:text-[#F8FAFC]"
+                            }`
+                        }
+                        title={isCollapsed ? "Administration" : undefined}
+                    >
+                        <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'}`}>
+                            <div className="flex-shrink-0"><Settings size={20} /></div>
+                            {!isCollapsed && <span className="whitespace-nowrap transition-opacity duration-300">Administration</span>}
+                        </div>
+                        {!isCollapsed && (
+                            <ChevronRight
+                                size={16}
+                                className="opacity-0 group-hover:opacity-100 transition-opacity"
+                            />
+                        )}
+                    </NavLink>
+                        </>
+                    )}
                 </nav>
 
                 {/* Logout Button */}
@@ -165,10 +217,16 @@ export default function DirectorLayout() {
                 {/* Header */}
                 <header className="bg-surface border-b border-border px-6 py-4 flex items-center justify-between z-30 shadow-sm">
                     <div className="lg:hidden flex items-center gap-3">
-                        <div className="w-9 h-9 bg-secondary rounded-xl flex items-center justify-center text-white shadow-md">
-                            <Briefcase size={18} />
+                        <div className="w-9 h-9 bg-secondary rounded-xl flex items-center justify-center text-white shadow-md overflow-hidden">
+                            {user?.enterprise_logo ? (
+                                <img src={user.enterprise_logo} alt="Logo" className="w-full h-full object-cover" />
+                            ) : (
+                                <Briefcase size={18} />
+                            )}
                         </div>
-                        <span className="font-bold text-text-primary tracking-tight">Directeur</span>
+                        <span className="font-bold text-text-primary tracking-tight truncate max-w-[150px]">
+                            {user?.enterprise_name || "Directeur"}
+                        </span>
                     </div>
 
                     <div className="hidden lg:block">
@@ -193,7 +251,7 @@ export default function DirectorLayout() {
                         </button>
 
                         <div className="hidden lg:flex items-center gap-2 px-3 py-2">
-                             <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm font-semibold uppercase overflow-hidden">
+                             <div className="w-8 h-8 rounded-lg flex items-center justify-center text-text-primary text-sm font-semibold uppercase overflow-hidden">
                                 {user?.profile_photo ? (
                                     <img 
                                         src={user.profile_photo} 
@@ -204,7 +262,7 @@ export default function DirectorLayout() {
                                     <User size={18} />
                                 )}
                             </div>
-                            <span className="text-sm font-medium text-[#F1F5F9]">
+                            <span className="text-sm font-medium text-text-primary">
                                 {user?.full_name || "Directeur"}
                             </span>
                         </div>

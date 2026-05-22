@@ -152,10 +152,22 @@ export default function Register() {
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     function getPasswordStrength() {
-        if (!password) return { label: "", color: "bg-gray-200" };
-        if (password.length < 6) return { label: "Faible", color: "bg-red-500" };
-        if (password.length >= 8 && /[A-Z]/.test(password) && /[0-9]/.test(password)) return { label: "Fort", color: "bg-green-500" };
-        return { label: "Moyen", color: "bg-yellow-500" };
+        if (!password) return { score: 0, label: "", color: "bg-gray-200", textColor: "text-gray-400" };
+        
+        const checks = {
+            length: password.length >= 8,
+            upper: /[A-Z]/.test(password),
+            number: /[0-9]/.test(password),
+            special: /[^A-Za-z0-9]/.test(password)
+        };
+
+        const score = Object.values(checks).filter(Boolean).length;
+
+        if (score === 0) return { score, label: "Très faible", color: "bg-red-500", textColor: "text-red-500", checks };
+        if (score === 1) return { score, label: "Faible", color: "bg-red-400", textColor: "text-red-400", checks };
+        if (score === 2) return { score, label: "Moyen", color: "bg-yellow-500", textColor: "text-yellow-500", checks };
+        if (score === 3) return { score, label: "Fort", color: "bg-blue-500", textColor: "text-blue-500", checks };
+        return { score, label: "Très Fort", color: "bg-green-500", textColor: "text-green-500", checks };
     }
     const strength = getPasswordStrength();
 
@@ -179,8 +191,9 @@ export default function Register() {
             showError("Veuillez remplir tous les champs obligatoires.");
             return;
         }
-        if (password.length < 6) {
-            showError("Le mot de passe doit contenir au moins 6 caractères.");
+        const passwordRegex = /^(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{8,}$/;
+        if (!passwordRegex.test(password)) {
+            showError("Le mot de passe doit contenir au moins 8 caractères, une majuscule, un chiffre et un caractère spécial.");
             return;
         }
         if (password !== confirmPassword) {
@@ -622,11 +635,49 @@ export default function Register() {
                                     </button>
                                 </div>
                                 {password && (
-                                    <div className="flex items-center gap-2 mt-2 px-1">
-                                        <div className={`h-1.5 w-full rounded-full ${strength.color}`}></div>
-                                        <span className={`text-[10px] font-semibold ${strength.color.replace('bg-', 'text-')}`}>
-                                            {strength.label}
-                                        </span>
+                                    <div className="space-y-2 mt-2 px-1">
+                                        <div className="flex items-center gap-2">
+                                            <div className="flex-1 h-1.5 flex gap-1">
+                                                {[1, 2, 3, 4].map((i) => (
+                                                    <div 
+                                                        key={i} 
+                                                        className={`h-full flex-1 rounded-full transition-all duration-300 ${
+                                                            i <= strength.score ? strength.color : "bg-gray-200 dark:bg-white/10"
+                                                        }`}
+                                                    />
+                                                ))}
+                                            </div>
+                                            <span className={`text-[10px] font-bold min-w-[60px] text-right ${strength.textColor}`}>
+                                                {strength.label}
+                                            </span>
+                                        </div>
+                                        
+                                        <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                                            <div className={`flex items-center gap-1.5 text-[9px] font-medium transition-colors ${strength.checks.length ? "text-green-500" : "text-gray-400"}`}>
+                                                <div className={`w-3 h-3 rounded-full flex items-center justify-center border ${strength.checks.length ? "bg-green-500 border-green-500" : "border-gray-300 dark:border-white/20"}`}>
+                                                    {strength.checks.length && <Check size={8} className="text-white" strokeWidth={4} />}
+                                                </div>
+                                                Min. 8 caractères
+                                            </div>
+                                            <div className={`flex items-center gap-1.5 text-[9px] font-medium transition-colors ${strength.checks.upper ? "text-green-500" : "text-gray-400"}`}>
+                                                <div className={`w-3 h-3 rounded-full flex items-center justify-center border ${strength.checks.upper ? "bg-green-500 border-green-500" : "border-gray-300 dark:border-white/20"}`}>
+                                                    {strength.checks.upper && <Check size={8} className="text-white" strokeWidth={4} />}
+                                                </div>
+                                                Majuscule
+                                            </div>
+                                            <div className={`flex items-center gap-1.5 text-[9px] font-medium transition-colors ${strength.checks.number ? "text-green-500" : "text-gray-400"}`}>
+                                                <div className={`w-3 h-3 rounded-full flex items-center justify-center border ${strength.checks.number ? "bg-green-500 border-green-500" : "border-gray-300 dark:border-white/20"}`}>
+                                                    {strength.checks.number && <Check size={8} className="text-white" strokeWidth={4} />}
+                                                </div>
+                                                Chiffre
+                                            </div>
+                                            <div className={`flex items-center gap-1.5 text-[9px] font-medium transition-colors ${strength.checks.special ? "text-green-500" : "text-gray-400"}`}>
+                                                <div className={`w-3 h-3 rounded-full flex items-center justify-center border ${strength.checks.special ? "bg-green-500 border-green-500" : "border-gray-300 dark:border-white/20"}`}>
+                                                    {strength.checks.special && <Check size={8} className="text-white" strokeWidth={4} />}
+                                                </div>
+                                                Caractère spécial
+                                            </div>
+                                        </div>
                                     </div>
                                 )}
                             </div>
@@ -669,8 +720,8 @@ export default function Register() {
                                 </button>
                                 <button
                                     type="submit"
-                                    disabled={loading}
-                                    className="flex-1 login-btn-bg rounded-xl py-2.5 font-semibold text-white shadow-lg hover:scale-105 transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-75 text-sm"
+                                    disabled={loading || strength.score < 4 || password !== confirmPassword}
+                                    className="flex-1 login-btn-bg rounded-xl py-2.5 font-semibold text-white shadow-lg hover:scale-105 transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:grayscale disabled:scale-100 text-sm"
                                 >
                                     {loading ? "Création..." : "Créer le compte"}
                                 </button>

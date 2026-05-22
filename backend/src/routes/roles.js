@@ -19,6 +19,7 @@ const ALL_PERMISSIONS = [
     "agencies.view", "agencies.create", "agencies.edit", "agencies.delete",
     "categories.view", "categories.create", "categories.edit", "categories.delete",
     "reports.view", "reports.export",
+    "contracts.view", "contracts.create", "contracts.sign", "contracts.download", "contracts.template.manage",
     "admin.access",
 ];
 

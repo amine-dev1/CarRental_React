@@ -33,6 +33,8 @@ import categoriesRoutes from "./routes/categories.js";
 import rolesRoutes from "./routes/roles.js";
 import teamRoutes from "./routes/team.js";
 import pricingRoutes from "./routes/pricing.js";
+import contractsRoutes from "./routes/contracts.js";
+import templatesRoutes from "./routes/templates.js";
 import { fileURLToPath } from "url";
 import path from "path";
 
@@ -90,6 +92,8 @@ app.use("/api/categories", categoriesRoutes);
 app.use("/api/roles", rolesRoutes);
 app.use("/api/team", teamRoutes);
 app.use("/api/pricing", pricingRoutes);
+app.use("/api/contracts", contractsRoutes);
+app.use("/api/templates", templatesRoutes);
 
 // 11. 404 Handler
 app.use((req, res, next) => {

@@ -15,9 +15,17 @@ import Customers from "./pages/director/Customers";
 import Rentals from "./pages/director/Rentals";
 import Agencies from "./pages/director/Agencies";
 import Reservations from "./pages/director/Reservations";
+import Administration from "./pages/director/Administration";
+import EnterpriseProfile from "./pages/director/EnterpriseProfile";
+import Categories from "./pages/director/Categories";
+import Roles from "./pages/director/Roles";
+import TeamUsers from "./pages/director/TeamUsers";
+import Pricing from "./pages/director/Pricing";
+import Reports from "./pages/director/Reports";
 
 import DirectorLayout from "./layouts/DirectorLayout";
 import LandingPage from "./pages/LandingPage";
+import { CurrencyProvider } from "./context/CurrencyContext";
 
 export default function Router() {
     return (
@@ -47,17 +55,26 @@ export default function Router() {
                     <Route
                         path="/director"
                         element={
-                            <ProtectedRoute role="director">
-                                <DirectorLayout />
+                            <ProtectedRoute role={["director", "agent"]}>
+                                <CurrencyProvider>
+                                    <DirectorLayout />
+                                </CurrencyProvider>
                             </ProtectedRoute>
                         }
                     >
                         <Route index element={<DirectorDashboard />} />
-                        <Route path="fleet" element={<Fleet />} />
-                        <Route path="customers" element={<Customers />} />
-                        <Route path="rentals" element={<Rentals />} />
-                        <Route path="agencies" element={<Agencies />} />
-                        <Route path="reservations" element={<Reservations />} />
+                        <Route path="fleet" element={<ProtectedRoute permission="fleet.view"><Fleet /></ProtectedRoute>} />
+                        <Route path="customers" element={<ProtectedRoute permission="customers.view"><Customers /></ProtectedRoute>} />
+                        <Route path="rentals" element={<ProtectedRoute permission="rentals.view"><Rentals /></ProtectedRoute>} />
+                        <Route path="agencies" element={<ProtectedRoute permission="agencies.view"><Agencies /></ProtectedRoute>} />
+                        <Route path="reservations" element={<ProtectedRoute permission="reservations.view"><Reservations /></ProtectedRoute>} />
+                        <Route path="admin" element={<ProtectedRoute permission="admin.access"><Administration /></ProtectedRoute>} />
+                        <Route path="admin/enterprise" element={<ProtectedRoute permission="admin.access"><EnterpriseProfile /></ProtectedRoute>} />
+                        <Route path="admin/categories" element={<ProtectedRoute permission="categories.view"><Categories /></ProtectedRoute>} />
+                        <Route path="admin/roles" element={<ProtectedRoute permission="admin.access"><Roles /></ProtectedRoute>} />
+                        <Route path="admin/team" element={<ProtectedRoute permission="admin.access"><TeamUsers /></ProtectedRoute>} />
+                        <Route path="admin/pricing" element={<ProtectedRoute permission="admin.access"><Pricing /></ProtectedRoute>} />
+                        <Route path="reports" element={<ProtectedRoute permission="reports.view"><Reports /></ProtectedRoute>} />
                     </Route>
 
                     {/* Default redirect to login */}

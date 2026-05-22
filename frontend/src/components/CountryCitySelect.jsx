@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import Select from "react-select";
 import { Country, City } from "country-state-city";
+import { CURRENCIES } from "../context/CurrencyContext";
 
 // ─── Shared react-select styles ───────────────────────────────────────────────
 function buildSelectStyles(darkMode = false) {
@@ -105,6 +106,34 @@ export function CitySelect({ countryCode, value, onChange, darkMode = false }) {
             isDisabled={!countryCode}
             styles={buildSelectStyles(darkMode)}
             noOptionsMessage={() => "Aucune ville trouvée"}
+        />
+    );
+}
+
+// ─── Currency Select ──────────────────────────────────────────────────────────
+export function CurrencySelect({ value, onChange, darkMode = false }) {
+    const options = useMemo(() =>
+        CURRENCIES.map((c) => ({
+            value: c.code,
+            label: `${c.symbol} — ${c.name} (${c.code})`,
+            code: c.code,
+        })), []
+    );
+
+    const selected = value
+        ? options.find((o) => o.code === value) || null
+        : null;
+
+    return (
+        <Select
+            options={options}
+            value={selected}
+            onChange={(opt) => onChange(opt ? opt.value : "MAD")}
+            placeholder="Sélectionnez une devise..."
+            isClearable={false}
+            isSearchable
+            styles={buildSelectStyles(darkMode)}
+            noOptionsMessage={() => "Aucune devise trouvée"}
         />
     );
 }

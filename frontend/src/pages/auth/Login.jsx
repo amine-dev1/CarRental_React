@@ -32,8 +32,8 @@ export default function Login() {
             );
 
             if (payload.role === "superadmin") navigate("/superadmin");
-            else if (payload.role === "director") navigate("/director");
-            else navigate("/agent");
+            else if (payload.role === "director" || payload.role === "agent") navigate("/director");
+            else navigate("/");
         } catch (err) {
             const errorMessage = err.response?.data?.error || "Identifiants ou mot de passe incorrects";
             showError(errorMessage);
